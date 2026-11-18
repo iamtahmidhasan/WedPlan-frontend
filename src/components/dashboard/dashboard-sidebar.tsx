@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Users,
   Sparkles,
+  CalendarCheck,
   Menu,
   ArrowUpRight,
   ShieldCheck,
@@ -33,8 +34,14 @@ export const commonNavigationItems = [
   },
   {
     name: "Services",
-    href: "/services",
+    href: "/dashboard/services",
     icon: Sparkles,
+    exact: false,
+  },
+  {
+    name: "Bookings",
+    href: "/dashboard/bookings",
+    icon: CalendarCheck,
     exact: false,
   },
 ];

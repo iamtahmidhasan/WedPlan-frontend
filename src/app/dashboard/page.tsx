@@ -35,7 +35,7 @@ export default function DashboardPage() {
         </Link>
 
         <Link
-          href="/services"
+          href="/dashboard/services"
           className="group relative rounded-lg border border-border bg-card p-6 shadow-xs transition-colors hover:border-primary/50 hover:bg-secondary/40"
         >
           <div className="flex items-center justify-between">

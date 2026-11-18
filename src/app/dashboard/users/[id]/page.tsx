@@ -3,6 +3,7 @@
 import { use, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
@@ -90,119 +91,129 @@ export default function EditUserPage({
   }
 
   return (
-    <div className="mx-auto max-w-xl space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Edit User</h1>
+    <div className="space-y-4">
+      <div>
         <Link
           href="/dashboard/users"
-          className="text-xs text-muted-foreground hover:underline"
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-2"
         >
-          Back to Users
+          <ArrowLeft className="size-3.5" />
+          <span>Back to Users</span>
         </Link>
+        <h1 className="text-2xl font-bold">User Details</h1>
+        <p className="text-sm text-muted-foreground">
+          View and manage account credentials, role permissions, and status.
+        </p>
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-4 rounded-lg border bg-card p-6"
+        className="rounded-md border bg-card p-6 space-y-6"
       >
-        <div className="space-y-1">
-          <label htmlFor="name" className="text-sm font-medium">
-            Name
-          </label>
-          <input
-            id="name"
-            type="text"
-            required
-            value={user.name}
-            onChange={(e) => setUser({ ...user, name: e.target.value })}
-            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring"
-          />
-        </div>
-
-        <div className="space-y-1">
-          <label htmlFor="email" className="text-sm font-medium">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            required
-            readOnly={isSessionUser}
-            disabled={isSessionUser}
-            value={user.email}
-            onChange={(e) => setUser({ ...user, email: e.target.value })}
-            className={cn(
-              "h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring",
-              isSessionUser && "bg-muted/50 cursor-not-allowed opacity-75"
-            )}
-          />
-          {isSessionUser && (
-            <p className="text-[11px] text-muted-foreground">
-              Your own email address cannot be edited.
-            </p>
-          )}
-        </div>
-
-        <div className="space-y-1">
-          <label htmlFor="image" className="text-sm font-medium">
-            Image URL
-          </label>
-          <input
-            id="image"
-            type="url"
-            value={user.image}
-            onChange={(e) => setUser({ ...user, image: e.target.value })}
-            placeholder="https://example.com/avatar.jpg"
-            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring"
-          />
-        </div>
-
-        <div className="space-y-1">
-          <label htmlFor="role" className="text-sm font-medium">
-            Role
-          </label>
-          <select
-            id="role"
-            value={user.role}
-            disabled={isSessionUser}
-            onChange={(e) => setUser({ ...user, role: e.target.value })}
-            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm capitalize outline-none focus:border-ring focus:ring-1 focus:ring-ring disabled:opacity-75 disabled:cursor-not-allowed"
-          >
-            <option value="customer">customer</option>
-            <option value="vendor">vendor</option>
-            <option value="admin">admin</option>
-          </select>
-        </div>
-
-        {user.role === "vendor" && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {/* Name */}
           <div className="space-y-1">
-            <label htmlFor="businessName" className="text-sm font-medium">
-              Business Name
+            <label htmlFor="name" className="text-sm font-medium">
+              Full Name
             </label>
             <input
-              id="businessName"
+              id="name"
               type="text"
-              value={user.businessName}
-              onChange={(e) => setUser({ ...user, businessName: e.target.value })}
+              required
+              value={user.name}
+              onChange={(e) => setUser({ ...user, name: e.target.value })}
               className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring"
             />
           </div>
-        )}
 
-        {/* Removed isBlocked & Verified from session user */}
+          {/* Email */}
+          <div className="space-y-1">
+            <label htmlFor="email" className="text-sm font-medium">
+              Email Address
+            </label>
+            <input
+              id="email"
+              type="email"
+              required
+              readOnly={isSessionUser}
+              disabled={isSessionUser}
+              value={user.email}
+              onChange={(e) => setUser({ ...user, email: e.target.value })}
+              className={cn(
+                "h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring",
+                isSessionUser && "bg-muted/50 cursor-not-allowed opacity-75"
+              )}
+            />
+          </div>
+
+          {/* Image URL */}
+          <div className="space-y-1">
+            <label htmlFor="image" className="text-sm font-medium">
+              Profile Image URL
+            </label>
+            <input
+              id="image"
+              type="url"
+              value={user.image}
+              onChange={(e) => setUser({ ...user, image: e.target.value })}
+              placeholder="https://example.com/avatar.jpg"
+              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+            />
+          </div>
+
+          {/* Role */}
+          <div className="space-y-1">
+            <label htmlFor="role" className="text-sm font-medium">
+              User Role
+            </label>
+            <select
+              id="role"
+              value={user.role}
+              disabled={isSessionUser}
+              onChange={(e) => setUser({ ...user, role: e.target.value })}
+              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm capitalize outline-none focus:border-ring focus:ring-1 focus:ring-ring disabled:opacity-75 disabled:cursor-not-allowed"
+            >
+              <option value="customer">customer</option>
+              <option value="vendor">vendor</option>
+              <option value="admin">admin</option>
+            </select>
+          </div>
+
+          {/* Business Name (Vendor only) */}
+          {user.role === "vendor" && (
+            <div className="space-y-1 sm:col-span-2">
+              <label htmlFor="businessName" className="text-sm font-medium">
+                Business Name
+              </label>
+              <input
+                id="businessName"
+                type="text"
+                value={user.businessName}
+                onChange={(e) =>
+                  setUser({ ...user, businessName: e.target.value })
+                }
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Status Checkboxes */}
         {!isSessionUser && (
-          <div className="flex items-center gap-6 pt-2">
-            <label className="flex items-center gap-2 text-sm font-medium">
+          <div className="flex items-center gap-6 border-t pt-4">
+            <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
               <input
                 type="checkbox"
                 checked={user.isBlocked}
-                onChange={(e) => setUser({ ...user, isBlocked: e.target.checked })}
+                onChange={(e) =>
+                  setUser({ ...user, isBlocked: e.target.checked })
+                }
                 className="size-4 rounded border-input"
               />
               Blocked
             </label>
 
-            <label className="flex items-center gap-2 text-sm font-medium">
+            <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
               <input
                 type="checkbox"
                 checked={user.emailVerified}
@@ -216,7 +227,8 @@ export default function EditUserPage({
           </div>
         )}
 
-        <div className="flex items-center justify-between gap-3 pt-4 border-t">
+        {/* Actions */}
+        <div className="flex items-center justify-between border-t pt-4">
           <div>
             {!isSessionUser && (
               <Button
@@ -235,7 +247,7 @@ export default function EditUserPage({
             >
               Cancel
             </Link>
-            <Button type="submit">Update User</Button>
+            <Button type="submit">Save Changes</Button>
           </div>
         </div>
       </form>

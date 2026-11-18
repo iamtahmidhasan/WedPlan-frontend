@@ -8,6 +8,7 @@ import {
   formatPrice,
   type Service,
 } from "@/components/services/service-card";
+import { BookingHandle } from "@/components/services/booking-handle";
 
 export const metadata: Metadata = {
   title: "Service details | WedPlan",
@@ -71,6 +72,16 @@ export default async function ServiceDetailsPage({
                   Vendor · {service.vendorId}
                 </p>
               </div>
+            </div>
+
+            <div className="mt-8">
+              <BookingHandle
+                serviceId={service._id}
+                vendorId={service.vendorId}
+                serviceName={service.serviceName}
+                defaultLocation={service.location}
+                price={service.price}
+              />
             </div>
 
             <div className="mt-12 flex items-center gap-4">

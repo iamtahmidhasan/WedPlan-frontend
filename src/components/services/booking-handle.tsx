@@ -1,0 +1,318 @@
+"use client";
+
+import { useState, type FormEvent } from "react";
+import Link from "next/link";
+import { Calendar, MapPin, Send, LoaderCircle, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { useSession } from "@/lib/auth-client";
+import { formatPrice } from "@/components/services/service-card";
+
+export type Booking = {
+  _id?: string;
+  serviceId: string;
+  vendorId: string;
+  customerId: string;
+  eventDate: string;
+  eventLocation: string;
+  message: string;
+  status: "pending" | "confirmed" | "cancelled";
+  createdAt: string;
+};
+
+interface BookingHandleProps {
+  serviceId: string;
+  vendorId: string;
+  serviceName?: string;
+  defaultLocation?: string;
+  price?: number;
+}
+
+export function BookingHandle({
+  serviceId,
+  vendorId,
+  serviceName,
+  defaultLocation = "",
+  price,
+}: BookingHandleProps) {
+  const { data: session, isPending } = useSession();
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const [eventDate, setEventDate] = useState("");
+  const [eventLocation, setEventLocation] = useState(defaultLocation);
+  const [message, setMessage] = useState("");
+
+  const user = session?.user;
+  const role = (user as { role?: string } | undefined)?.role || "customer";
+  const customerId =
+    user?.id || (user as { _id?: string })?._id || user?.email || "";
+
+  // Customer role check
+  const isCustomer = role === "customer";
+
+  async function handleBookingSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+
+    if (!user) {
+      toast.error("Please sign in to book this service.");
+      return;
+    }
+
+    if (!isCustomer) {
+      toast.error("Only customer accounts can book services.");
+      return;
+    }
+
+    setLoading(true);
+
+    const bookingPayload: Booking = {
+      serviceId,
+      vendorId,
+      customerId,
+      eventDate,
+      eventLocation: eventLocation.trim(),
+      message: message.trim(),
+      status: "pending",
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      const response = await fetch("http://localhost:5000/bookings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(bookingPayload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to create booking: HTTP ${response.status}`);
+      }
+
+      toast.success("Booking request sent successfully!", {
+        description: "The vendor will review your details and get in touch.",
+      });
+
+      setMessage("");
+      setEventDate("");
+      setOpen(false);
+    } catch (err) {
+      const errorMsg =
+        err instanceof Error ? err.message : "Something went wrong.";
+      toast.error("Booking failed", { description: errorMsg });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const today = new Date().toISOString().split("T")[0];
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger className="inline-flex h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-md bg-primary px-8 text-base font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer">
+        <Calendar className="size-4" />
+        <span>Book this service</span>
+      </SheetTrigger>
+
+      <SheetContent
+        side="right"
+        className="w-full sm:max-w-md p-0 flex flex-col justify-between"
+      >
+        <SheetHeader className="border-b border-border p-6 text-left">
+          <SheetTitle className="font-heading text-2xl font-bold">
+            Book Service
+          </SheetTitle>
+          <SheetDescription className="text-xs text-muted-foreground">
+            {serviceName
+              ? `Request a booking for "${serviceName}".`
+              : "Fill out your wedding event details."}
+          </SheetDescription>
+        </SheetHeader>
+
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Service Snapshot Card */}
+          <div className="rounded-xl border border-border bg-secondary/30 p-4 space-y-2">
+            {serviceName && (
+              <h3 className="font-semibold text-sm text-foreground">
+                {serviceName}
+              </h3>
+            )}
+            {typeof price === "number" && (
+              <p className="text-xs text-muted-foreground">
+                Estimated rate:{" "}
+                <span className="font-medium text-primary">
+                  {formatPrice(price)}
+                </span>
+              </p>
+            )}
+            <p className="text-[11px] text-muted-foreground truncate">
+              Vendor ID: <span className="font-mono">{vendorId}</span>
+            </p>
+          </div>
+
+          {/* Role & Auth Validations */}
+          {isPending ? (
+            <div className="flex h-32 items-center justify-center text-xs text-muted-foreground">
+              <LoaderCircle className="size-4 animate-spin mr-2" />
+              <span>Checking account status…</span>
+            </div>
+          ) : !user ? (
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-800 dark:text-amber-300 space-y-3">
+              <div className="flex items-start gap-2.5">
+                <AlertCircle className="size-4 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold">Sign in required</p>
+                  <p className="mt-1 text-muted-foreground">
+                    You need a customer account to send booking requests to
+                    vendors.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/sign-in"
+                onClick={() => setOpen(false)}
+                className="inline-flex h-9 w-full items-center justify-center rounded-md bg-primary text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                Sign In to Book
+              </Link>
+            </div>
+          ) : !isCustomer ? (
+            <div className="rounded-xl border border-muted bg-muted/40 p-4 text-xs text-muted-foreground space-y-2">
+              <p className="font-medium text-foreground">
+                Vendor / Admin Account
+              </p>
+              <p>
+                You are currently logged in as a{" "}
+                <span className="font-semibold capitalize text-primary">
+                  {role}
+                </span>
+                . Bookings can only be submitted by customer accounts.
+              </p>
+            </div>
+          ) : (
+            /* Booking Form for Customer Role */
+            <form
+              id="booking-form"
+              onSubmit={handleBookingSubmit}
+              className="space-y-4"
+            >
+              {/* Customer Account Info */}
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground">
+                  Your Account
+                </label>
+                <div className="rounded-md border border-input bg-muted/30 px-3 py-2 text-xs text-muted-foreground flex justify-between items-center">
+                  <span className="truncate">{user.name || user.email}</span>
+                  <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary capitalize">
+                    {role}
+                  </span>
+                </div>
+              </div>
+
+              {/* Event Date */}
+              <div className="space-y-1">
+                <label
+                  htmlFor="eventDate"
+                  className="text-xs font-medium text-foreground"
+                >
+                  Event Date <span className="text-destructive">*</span>
+                </label>
+                <input
+                  id="eventDate"
+                  type="date"
+                  required
+                  min={today}
+                  value={eventDate}
+                  onChange={(e) => setEventDate(e.target.value)}
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition-colors hover:bg-secondary/40 focus:border-ring focus:ring-1 focus:ring-ring"
+                />
+              </div>
+
+              {/* Event Location */}
+              <div className="space-y-1">
+                <label
+                  htmlFor="eventLocation"
+                  className="text-xs font-medium text-foreground"
+                >
+                  Event Location <span className="text-destructive">*</span>
+                </label>
+                <div className="relative">
+                  <MapPin className="size-4 text-muted-foreground absolute left-3 top-3" />
+                  <input
+                    id="eventLocation"
+                    type="text"
+                    required
+                    value={eventLocation}
+                    onChange={(e) => setEventLocation(e.target.value)}
+                    placeholder="e.g. Napa Valley, California"
+                    className="h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm outline-none transition-colors hover:bg-secondary/40 focus:border-ring focus:ring-1 focus:ring-ring"
+                  />
+                </div>
+              </div>
+
+              {/* Message */}
+              <div className="space-y-1">
+                <label
+                  htmlFor="message"
+                  className="text-xs font-medium text-foreground"
+                >
+                  Message / Special Notes
+                </label>
+                <textarea
+                  id="message"
+                  rows={4}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Share details like estimated guest count, preferred timing, or special requests..."
+                  className="w-full rounded-md border border-input bg-background p-3 text-sm outline-none transition-colors hover:bg-secondary/40 focus:border-ring focus:ring-1 focus:ring-ring"
+                />
+              </div>
+            </form>
+          )}
+        </div>
+
+        {/* Footer Actions */}
+        {user && isCustomer && (
+          <div className="border-t border-border p-4 bg-card flex items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="booking-form"
+              size="sm"
+              disabled={loading}
+              className="gap-1.5"
+            >
+              {loading ? (
+                <>
+                  <LoaderCircle className="size-3.5 animate-spin" />
+                  <span>Submitting…</span>
+                </>
+              ) : (
+                <>
+                  <Send className="size-3.5" />
+                  <span>Send Booking Request</span>
+                </>
+              )}
+            </Button>
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+}
