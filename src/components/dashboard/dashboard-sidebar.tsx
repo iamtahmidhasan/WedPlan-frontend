@@ -8,6 +8,7 @@ import {
   Users,
   Sparkles,
   CalendarCheck,
+  User,
   Menu,
   ArrowUpRight,
   ShieldCheck,
@@ -42,6 +43,12 @@ export const commonNavigationItems = [
     name: "Bookings",
     href: "/dashboard/bookings",
     icon: CalendarCheck,
+    exact: false,
+  },
+  {
+    name: "Profile",
+    href: "/dashboard/profile",
+    icon: User,
     exact: false,
   },
 ];
@@ -191,7 +198,11 @@ function NavigationContent({ onItemClick, variant = "card" }: NavContentProps) {
       {/* User Account Section */}
       {user && (
         <div className={cn(isSheet ? "border-t border-border bg-secondary/20 p-4" : "mt-3 border-t border-border/60 pt-3")}>
-          <div className="flex items-center gap-2.5 px-2 py-1">
+          <Link
+            href="/dashboard/profile"
+            onClick={onItemClick}
+            className="flex items-center gap-2.5 rounded-xl p-1 transition-colors hover:bg-secondary/60"
+          >
             <Avatar className="size-8 ring-1 ring-border/50">
               {user.image && (
                 <AvatarImage
@@ -212,7 +223,7 @@ function NavigationContent({ onItemClick, variant = "card" }: NavContentProps) {
                 {user.email}
               </p>
             </div>
-          </div>
+          </Link>
         </div>
       )}
     </div>

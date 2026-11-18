@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -28,11 +29,20 @@ export default async function DashboardServicesPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold">Services</h1>
-        <p className="text-sm text-muted-foreground">
-          All vendor services from the database.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Services</h1>
+          <p className="text-sm text-muted-foreground">
+            All vendor services from the database.
+          </p>
+        </div>
+        <Link
+          href="/dashboard/services/add"
+          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 w-fit"
+        >
+          <Plus className="size-3.5" />
+          <span>Add Service</span>
+        </Link>
       </div>
 
       <div className="rounded-md border bg-card">
