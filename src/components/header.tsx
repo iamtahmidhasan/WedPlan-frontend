@@ -29,6 +29,7 @@ export type HeaderMode = "solid" | "overlay";
 
 const navigation = [
   { label: "Discover", href: "/" },
+  { label: "Services", href: "/services" },
   { label: "Vendors", href: "/#vendors" },
   { label: "Bookings", href: "/#bookings" },
   { label: "Saved", href: "/#saved" },
@@ -114,22 +115,27 @@ function LoadingAccount({ isTransparent }: { isTransparent: boolean }) {
   );
 }
 
-function AuthActions({ onNavigate }: { onNavigate?: () => void }) {
+type AuthActionsProps = {
+  onNavigate?: () => void;
+  className?: string;
+};
+
+function AuthActions({ onNavigate, className }: AuthActionsProps) {
   return (
-    <div className="grid gap-2 sm:flex">
+    <div className={cn("gap-2", className)}>
       <Link
         href="/sign-in"
         onClick={onNavigate}
-        className="flex h-11 min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-md border border-border px-4 text-sm font-medium text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex h-9 min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-md border border-border px-4 text-sm font-medium text-foreground outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring lg:flex-none"
       >
         Sign in
       </Link>
       <Link
         href="/sign-up"
         onClick={onNavigate}
-        className="flex h-11 min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex h-9 min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground outline-none transition-colors hover:bg-primary/80 focus-visible:ring-2 focus-visible:ring-ring lg:flex-none"
       >
-        Create account
+        Sign up
       </Link>
     </div>
   );
@@ -235,15 +241,15 @@ export function Header({ mode = "solid" }: { mode?: HeaderMode }) {
           <div className="flex items-center gap-2 lg:justify-self-end">
             {isPending ? (
               <LoadingAccount isTransparent={isTransparent} />
+            ) : user ? (
+              <AccountMenu
+                user={user}
+                isSigningOut={isSigningOut}
+                isTransparent={isTransparent}
+                onSignOut={handleSignOut}
+              />
             ) : (
-              user && (
-                <AccountMenu
-                  user={user}
-                  isSigningOut={isSigningOut}
-                  isTransparent={isTransparent}
-                  onSignOut={handleSignOut}
-                />
-              )
+              <AuthActions className="hidden items-center lg:flex" />
             )}
 
             <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
@@ -280,7 +286,10 @@ export function Header({ mode = "solid" }: { mode?: HeaderMode }) {
                 </div>
                 {!isPending && !user && (
                   <div className="border-t border-border px-6 py-6">
-                    <AuthActions onNavigate={() => setIsMenuOpen(false)} />
+                    <AuthActions
+                      className="grid sm:flex"
+                      onNavigate={() => setIsMenuOpen(false)}
+                    />
                   </div>
                 )}
               </SheetContent>
