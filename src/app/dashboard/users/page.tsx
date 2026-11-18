@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { ClickableTableRow } from "@/components/dashboard/clickable-table-row";
+import { API_URL } from "@/lib/config";
 
 interface User {
   _id?: string;
@@ -42,7 +43,7 @@ export default function UsersPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const fetchUsers = () => {
-    fetch("http://localhost:5000/users")
+    fetch(`${API_URL}/users`)
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
@@ -69,7 +70,7 @@ export default function UsersPage() {
     );
 
     try {
-      const response = await fetch(`http://localhost:5000/users/${userId}`, {
+      const response = await fetch(`${API_URL}/users/${userId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -95,7 +96,7 @@ export default function UsersPage() {
     if (!confirm("Are you sure you want to delete this user?")) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/users/${userId}`, {
+      const response = await fetch(`${API_URL}/users/${userId}`, {
         method: "DELETE",
       });
 

@@ -32,6 +32,7 @@ import { DeleteServiceButton } from "@/components/services/delete-service-button
 import { DeleteBookingButton } from "@/components/bookings/delete-booking-button";
 import { UpdateBookingStatusButton } from "@/components/bookings/update-booking-status-button";
 import { ClickableTableRow } from "@/components/dashboard/clickable-table-row";
+import { API_URL } from "@/lib/config";
 
 interface Booking {
   _id?: string;
@@ -96,13 +97,13 @@ export default function ProfilePage() {
     if (!sessionUser) return;
 
     Promise.all([
-      fetch("http://localhost:5000/users").then((res) =>
+      fetch(`${API_URL}/users`).then((res) =>
         res.ok ? res.json() : []
       ),
-      fetch("http://localhost:5000/bookings").then((res) =>
+      fetch(`${API_URL}/bookings`).then((res) =>
         res.ok ? res.json() : []
       ),
-      fetch("http://localhost:5000/services").then((res) =>
+      fetch(`${API_URL}/services`).then((res) =>
         res.ok ? res.json() : []
       ),
     ])
@@ -177,7 +178,7 @@ export default function ProfilePage() {
     };
 
     try {
-      const res = await fetch(`http://localhost:5000/users/${user._id}`, {
+      const res = await fetch(`${API_URL}/users/${user._id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

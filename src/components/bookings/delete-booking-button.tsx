@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { API_URL } from "@/lib/config";
 
 export function DeleteBookingButton({ id }: { id: string }) {
   const router = useRouter();
@@ -11,7 +12,7 @@ export function DeleteBookingButton({ id }: { id: string }) {
     if (!confirm("Are you sure you want to delete this booking?")) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/bookings/${id}`, {
+      const res = await fetch(`${API_URL}/bookings/${id}`, {
         method: "DELETE",
       });
 

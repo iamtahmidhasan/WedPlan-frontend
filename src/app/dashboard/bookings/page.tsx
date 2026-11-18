@@ -13,6 +13,7 @@ import { type Service } from "@/components/services/service-card";
 import { DeleteBookingButton } from "@/components/bookings/delete-booking-button";
 import { UpdateBookingStatusButton } from "@/components/bookings/update-booking-status-button";
 import { cn } from "@/lib/utils";
+import { API_URL } from "@/lib/config";
 
 interface Booking {
   _id?: string;
@@ -40,11 +41,11 @@ export default async function DashboardBookingsPage() {
 
   try {
     const [bookingsRes, servicesRes, usersRes] = await Promise.all([
-      fetch("http://localhost:5000/bookings", { cache: "no-store" }),
-      fetch("http://localhost:5000/services", { cache: "no-store" }).catch(
+      fetch(`${API_URL}/bookings`, { cache: "no-store" }),
+      fetch(`${API_URL}/services`, { cache: "no-store" }).catch(
         () => null,
       ),
-      fetch("http://localhost:5000/users", { cache: "no-store" }).catch(
+      fetch(`${API_URL}/users`, { cache: "no-store" }).catch(
         () => null,
       ),
     ]);

@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
 import { formatPrice } from "@/components/services/service-card";
+import { API_URL } from "@/lib/config";
 
 export type Booking = {
   _id?: string;
@@ -86,7 +87,7 @@ export function BookingHandle({
     };
 
     try {
-      const response = await fetch("http://localhost:5000/bookings", {
+      const response = await fetch(`${API_URL}/bookings`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

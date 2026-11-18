@@ -8,6 +8,7 @@ import {
   Users,
   Sparkles,
   CalendarCheck,
+  Bookmark,
   User,
   Menu,
   ArrowUpRight,
@@ -43,6 +44,12 @@ export const commonNavigationItems = [
     name: "Bookings",
     href: "/dashboard/bookings",
     icon: CalendarCheck,
+    exact: false,
+  },
+  {
+    name: "Bookmarks",
+    href: "/dashboard/bookmarks",
+    icon: Bookmark,
     exact: false,
   },
   {

@@ -12,12 +12,13 @@ import {
 import { formatPrice, type Service } from "@/components/services/service-card";
 import { DeleteServiceButton } from "@/components/services/delete-service-button";
 import { ClickableTableRow } from "@/components/dashboard/clickable-table-row";
+import { API_URL } from "@/lib/config";
 
 export default async function DashboardServicesPage() {
   let services: Service[] = [];
 
   try {
-    const res = await fetch("http://localhost:5000/services", {
+    const res = await fetch(`${API_URL}/services`, {
       cache: "no-store",
     });
     if (res.ok) {

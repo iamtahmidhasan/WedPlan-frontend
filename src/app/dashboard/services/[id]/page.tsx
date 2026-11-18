@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { API_URL } from "@/lib/config";
 
 export default function EditServicePage({
   params,
@@ -25,7 +26,7 @@ export default function EditServicePage({
   });
 
   useEffect(() => {
-    fetch(`http://localhost:5000/services/${id}`)
+    fetch(`${API_URL}/services/${id}`)
       .then((res) => res.json())
       .then((data) => {
         if (data) {
@@ -58,7 +59,7 @@ export default function EditServicePage({
     };
 
     try {
-      const res = await fetch(`http://localhost:5000/services/${id}`, {
+      const res = await fetch(`${API_URL}/services/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -78,7 +79,7 @@ export default function EditServicePage({
     if (!confirm("Are you sure you want to delete this service?")) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/services/${id}`, {
+      const res = await fetch(`${API_URL}/services/${id}`, {
         method: "DELETE",
       });
 

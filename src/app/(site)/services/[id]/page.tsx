@@ -9,13 +9,15 @@ import {
   type Service,
 } from "@/components/services/service-card";
 import { BookingHandle } from "@/components/services/booking-handle";
+import { BookmarkButton } from "@/components/bookmarks/bookmark-button";
+import { API_URL } from "@/lib/config";
 
 export const metadata: Metadata = {
   title: "Service details | WedPlan",
   description: "Explore the details of a WedPlan service.",
 };
 
-const API_URL = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"}/services`;
+const SERVICES_API = `${API_URL}/services`;
 
 export default async function ServiceDetailsPage({
   params,
@@ -25,7 +27,7 @@ export default async function ServiceDetailsPage({
   await connection();
 
   const { id } = await params;
-  const response = await fetch(`${API_URL}/${id}`);
+  const response = await fetch(`${SERVICES_API}/${id}`);
 
   if (!response.ok) notFound();
 
@@ -74,13 +76,21 @@ export default async function ServiceDetailsPage({
               </div>
             </div>
 
-            <div className="mt-8">
+            <div className="mt-8 flex flex-wrap items-center gap-3">
               <BookingHandle
                 serviceId={service._id}
                 vendorId={service.vendorId}
                 serviceName={service.serviceName}
                 defaultLocation={service.location}
                 price={service.price}
+              />
+              <BookmarkButton
+                serviceId={service._id}
+                serviceName={service.serviceName}
+                category={service.category}
+                price={service.price}
+                location={service.location}
+                image={cover}
               />
             </div>
 

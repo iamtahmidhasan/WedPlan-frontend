@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { connection } from "next/server";
 import { ServiceCard, type Service } from "@/components/services/service-card";
+import { API_URL } from "@/lib/config";
 
 export const metadata: Metadata = {
   title: "Services | WedPlan",
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
     "Explore venues, photographers, catering, and the people who make your day yours.",
 };
 
-const API_URL = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"}/services`;
+const SERVICES_API = `${API_URL}/services`;
 
 export default async function ServicesPage() {
   await connection();
@@ -18,7 +19,7 @@ export default async function ServicesPage() {
   let hasError = false;
 
   try {
-    const response = await fetch(API_URL);
+    const response = await fetch(SERVICES_API);
 
     if (!response.ok) throw new Error("Request failed");
 

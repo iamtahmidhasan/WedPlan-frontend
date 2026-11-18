@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { type Service } from "@/components/services/service-card";
+import { API_URL } from "@/lib/config";
 
 interface UserSummary {
   _id?: string;
@@ -56,13 +57,13 @@ export default function EditBookingPage({
 
   useEffect(() => {
     Promise.all([
-      fetch(`http://localhost:5000/bookings/${id}`).then((res) =>
+      fetch(`${API_URL}/bookings/${id}`).then((res) =>
         res.ok ? res.json() : null,
       ),
-      fetch("http://localhost:5000/services").then((res) =>
+      fetch(`${API_URL}/services`).then((res) =>
         res.ok ? res.json() : [],
       ),
-      fetch("http://localhost:5000/users").then((res) =>
+      fetch(`${API_URL}/users`).then((res) =>
         res.ok ? res.json() : [],
       ),
     ])
@@ -119,7 +120,7 @@ export default function EditBookingPage({
     };
 
     try {
-      const res = await fetch(`http://localhost:5000/bookings/${id}`, {
+      const res = await fetch(`${API_URL}/bookings/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -139,7 +140,7 @@ export default function EditBookingPage({
     if (!confirm("Are you sure you want to delete this booking?")) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/bookings/${id}`, {
+      const res = await fetch(`${API_URL}/bookings/${id}`, {
         method: "DELETE",
       });
 

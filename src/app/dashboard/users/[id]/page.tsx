@@ -28,6 +28,7 @@ import { formatPrice, type Service } from "@/components/services/service-card";
 import { DeleteServiceButton } from "@/components/services/delete-service-button";
 import { DeleteBookingButton } from "@/components/bookings/delete-booking-button";
 import { UpdateBookingStatusButton } from "@/components/bookings/update-booking-status-button";
+import { API_URL } from "@/lib/config";
 
 interface Booking {
   _id?: string;
@@ -83,13 +84,13 @@ export default function EditUserPage({
 
   useEffect(() => {
     Promise.all([
-      fetch(`http://localhost:5000/users/${id}`).then((res) =>
+      fetch(`${API_URL}/users/${id}`).then((res) =>
         res.ok ? res.json() : null,
       ),
-      fetch("http://localhost:5000/bookings").then((res) =>
+      fetch(`${API_URL}/bookings`).then((res) =>
         res.ok ? res.json() : [],
       ),
-      fetch("http://localhost:5000/services").then((res) =>
+      fetch(`${API_URL}/services`).then((res) =>
         res.ok ? res.json() : [],
       ),
     ])
@@ -140,7 +141,7 @@ export default function EditUserPage({
     e.preventDefault();
 
     try {
-      const res = await fetch(`http://localhost:5000/users/${id}`, {
+      const res = await fetch(`${API_URL}/users/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(user),
@@ -160,7 +161,7 @@ export default function EditUserPage({
     if (!confirm("Are you sure you want to delete this user?")) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/users/${id}`, {
+      const res = await fetch(`${API_URL}/users/${id}`, {
         method: "DELETE",
       });
 

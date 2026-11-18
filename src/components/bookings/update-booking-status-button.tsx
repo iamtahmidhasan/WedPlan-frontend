@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { API_URL } from "@/lib/config";
 
 interface UpdateBookingStatusButtonProps {
   id: string;
@@ -38,7 +39,7 @@ export function UpdateBookingStatusButton({
     setLoading(true);
 
     try {
-      const res = await fetch(`http://localhost:5000/bookings/${id}`, {
+      const res = await fetch(`${API_URL}/bookings/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),

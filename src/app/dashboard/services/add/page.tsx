@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { ArrowLeft, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
+import { API_URL } from "@/lib/config";
 
 export default async function AddServicePage() {
   const session = await auth.api.getSession({
@@ -29,7 +30,7 @@ export default async function AddServicePage() {
       createdAt: new Date().toISOString(),
     };
 
-    await fetch("http://localhost:5000/services", {
+    await fetch(`${API_URL}/services`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

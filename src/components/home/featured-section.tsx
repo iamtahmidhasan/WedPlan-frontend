@@ -2,8 +2,9 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { connection } from "next/server";
 import { ServiceCard, type Service } from "@/components/services/service-card";
+import { API_URL } from "@/lib/config";
 
-const API_URL = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"}/services`;
+const SERVICES_API = `${API_URL}/services`;
 const FEATURED_COUNT = 6;
 
 export async function FeaturedSection() {
@@ -12,7 +13,7 @@ export async function FeaturedSection() {
   let services: Service[] = [];
 
   try {
-    const response = await fetch(API_URL);
+    const response = await fetch(SERVICES_API);
 
     if (!response.ok) return null;
 
