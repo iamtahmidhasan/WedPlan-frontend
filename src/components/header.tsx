@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { ChevronDown, LogOut, Menu, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { LogOut, Menu, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -23,6 +23,9 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { signOut, useSession } from "@/lib/auth-client";
+import { cn } from "@/lib/utils";
+
+export type HeaderMode = "solid" | "overlay";
 
 const navigation = [
   { label: "Discover", href: "/" },
@@ -45,17 +48,27 @@ type User = NonNullable<ReturnType<typeof useSession>["data"]>["user"];
 type AccountMenuProps = {
   user: User;
   isSigningOut: boolean;
+  isTransparent: boolean;
   onSignOut: () => void;
 };
 
-function AccountMenu({ user, isSigningOut, onSignOut }: AccountMenuProps) {
+function AccountMenu({
+  user,
+  isSigningOut,
+  isTransparent,
+  onSignOut,
+}: AccountMenuProps) {
   const displayName = user?.name || user?.email || "Your account";
   const initials = getInitials(user?.name || user?.email || "U");
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className="flex items-center gap-2 rounded-full p-1 outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring"
+        className={cn(
+          "flex items-center gap-2 rounded-full p-1 text-foreground outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring",
+          isTransparent &&
+            "max-lg:text-white max-lg:hover:bg-white/10 max-lg:focus-visible:ring-white"
+        )}
         aria-label={`Open account menu for ${displayName}`}
       >
         <Avatar>
@@ -88,25 +101,22 @@ function AccountMenu({ user, isSigningOut, onSignOut }: AccountMenuProps) {
   );
 }
 
-function LoadingAccount() {
+function LoadingAccount({ isTransparent }: { isTransparent: boolean }) {
   return (
     <div
-      className="size-9 rounded-full bg-muted motion-safe:animate-pulse motion-reduce:animate-none"
+      className={cn(
+        "size-9 rounded-full motion-safe:animate-pulse motion-reduce:animate-none",
+        isTransparent ? "bg-white/30" : "bg-muted"
+      )}
       aria-label="Loading account"
       role="status"
     />
   );
 }
 
-function AuthActions({
-  onNavigate,
-  stacked = false,
-}: {
-  onNavigate?: () => void;
-  stacked?: boolean;
-}) {
+function AuthActions({ onNavigate }: { onNavigate?: () => void }) {
   return (
-    <div className={stacked ? "grid gap-2" : "grid gap-2 sm:flex"}>
+    <div className="grid gap-2 sm:flex">
       <Link
         href="/sign-in"
         onClick={onNavigate}
@@ -122,6 +132,22 @@ function AuthActions({
         Create account
       </Link>
     </div>
+  );
+}
+
+function DesktopNavigation() {
+  return (
+    <nav aria-label="Primary" className="hidden items-center gap-1 lg:flex">
+      {navigation.map((item) => (
+        <Link
+          key={item.label}
+          href={item.href}
+          className="rounded-md px-3 py-2 text-sm text-muted-foreground outline-none transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {item.label}
+        </Link>
+      ))}
+    </nav>
   );
 }
 
@@ -145,12 +171,22 @@ function NavigationLinks({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-export function Header() {
+export function Header({ mode = "solid" }: { mode?: HeaderMode }) {
   const router = useRouter();
   const { data: session, isPending } = useSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [signOutError, setSignOutError] = useState("");
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const updateScrolled = () => setIsScrolled(window.scrollY > 8);
+    updateScrolled();
+    window.addEventListener("scroll", updateScrolled, { passive: true });
+    return () => window.removeEventListener("scroll", updateScrolled);
+  }, []);
+
+  const isTransparent = mode === "overlay" && !isScrolled && !isMenuOpen;
   const user = session?.user;
 
   async function handleSignOut() {
@@ -172,96 +208,87 @@ export function Header() {
 
   return (
     <>
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-border bg-background px-8 py-8 lg:flex">
-        <div className="flex items-center justify-between">
+      <header
+        className={cn(
+          "fixed inset-x-0 top-0 z-50 h-16 border-b transition-colors duration-300",
+          isTransparent
+            ? "border-transparent bg-transparent"
+            : "border-border bg-background"
+        )}
+      >
+        <div className="mx-auto flex h-full max-w-7xl items-center justify-between gap-4 px-6 sm:px-10 lg:grid lg:grid-cols-[1fr_auto_1fr]">
           <Link
             href="/"
-            className="flex size-10 items-center justify-center rounded-full bg-foreground font-heading text-xl text-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="WedPlan home"
+            className={cn(
+              "font-heading text-3xl tracking-[-0.04em] outline-none focus-visible:ring-2 lg:justify-self-start",
+              isTransparent
+                ? "text-white focus-visible:ring-white"
+                : "text-foreground focus-visible:ring-ring"
+            )}
           >
-            W.
+            WedPlan
           </Link>
-          {isPending ? (
-            <LoadingAccount />
-          ) : (
-            user && (
-              <AccountMenu
-                user={user}
-                isSigningOut={isSigningOut}
-                onSignOut={handleSignOut}
-              />
-            )
-          )}
-        </div>
 
-        <div className="mt-32">
-          <p className="mb-4 px-3 text-sm text-muted-foreground">Plan together</p>
-          <NavigationLinks />
-        </div>
+          <DesktopNavigation />
 
-        <div className="mt-auto space-y-5">
-          <p className="px-3 text-sm text-muted-foreground">
-            Find the people who make the day yours.
-          </p>
-          {!isPending && !user && <AuthActions stacked />}
-        </div>
-      </aside>
+          <div className="flex items-center gap-2 lg:justify-self-end">
+            {isPending ? (
+              <LoadingAccount isTransparent={isTransparent} />
+            ) : (
+              user && (
+                <AccountMenu
+                  user={user}
+                  isSigningOut={isSigningOut}
+                  isTransparent={isTransparent}
+                  onSignOut={handleSignOut}
+                />
+              )
+            )}
 
-      <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-background px-6 lg:hidden">
-        <Link
-          href="/"
-          className="flex size-9 items-center justify-center rounded-full bg-foreground font-heading text-lg text-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          aria-label="WedPlan home"
-        >
-          W.
-        </Link>
-        <div className="flex items-center gap-2">
-          {isPending ? (
-            <LoadingAccount />
-          ) : (
-            user && (
-              <AccountMenu
-                user={user}
-                isSigningOut={isSigningOut}
-                onSignOut={handleSignOut}
-              />
-            )
-          )}
-          <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-            <SheetTrigger
-              className="flex size-10 items-center justify-center rounded-md text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
-            >
-              {isMenuOpen ? (
-                <X className="size-5" aria-hidden="true" />
-              ) : (
-                <Menu className="size-5" aria-hidden="true" />
-              )}
-            </SheetTrigger>
-            <SheetContent
-              side="top"
-              overlayClassName="top-16"
-              showCloseButton={false}
-              className="!top-16 !bottom-0 !left-0 !right-0 !h-[calc(100dvh-4rem)] w-full max-w-none border-b-0 p-0 lg:hidden"
-            >
-              <SheetHeader className="border-b border-border px-6 py-5 text-left">
-                <SheetTitle className="font-heading text-2xl">WedPlan</SheetTitle>
-                <SheetDescription>
-                  Make room for the good part.
-                </SheetDescription>
-              </SheetHeader>
-              <div className="flex-1 px-6 py-8">
-                <NavigationLinks onNavigate={() => setIsMenuOpen(false)} />
-              </div>
-              {!isPending && !user && (
-                <div className="border-t border-border px-6 py-6">
-                  <AuthActions onNavigate={() => setIsMenuOpen(false)} />
+            <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+              <SheetTrigger
+                className={cn(
+                  "flex size-10 items-center justify-center rounded-md text-foreground outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring lg:hidden",
+                  isTransparent &&
+                    "max-lg:text-white max-lg:hover:bg-white/10 max-lg:focus-visible:ring-white"
+                )}
+                aria-label={
+                  isMenuOpen ? "Close navigation menu" : "Open navigation menu"
+                }
+              >
+                {isMenuOpen ? (
+                  <X className="size-5" aria-hidden="true" />
+                ) : (
+                  <Menu className="size-5" aria-hidden="true" />
+                )}
+              </SheetTrigger>
+              <SheetContent
+                side="top"
+                overlayClassName="top-16"
+                showCloseButton={false}
+                className="!top-16 !bottom-0 !left-0 !right-0 !h-[calc(100dvh-4rem)] w-full max-w-none border-b-0 p-0 lg:hidden"
+              >
+                <SheetHeader className="border-b border-border px-6 py-5 text-left">
+                  <SheetTitle className="font-heading text-2xl">WedPlan</SheetTitle>
+                  <SheetDescription>
+                    Make room for the good part.
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="flex-1 px-6 py-8">
+                  <NavigationLinks onNavigate={() => setIsMenuOpen(false)} />
                 </div>
-              )}
-            </SheetContent>
-          </Sheet>
+                {!isPending && !user && (
+                  <div className="border-t border-border px-6 py-6">
+                    <AuthActions onNavigate={() => setIsMenuOpen(false)} />
+                  </div>
+                )}
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </header>
+
       {signOutError && (
         <p className="sr-only" role="alert">
           {signOutError}
