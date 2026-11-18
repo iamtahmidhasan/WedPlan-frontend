@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Pencil, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Table,
@@ -15,6 +15,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
+import { ClickableTableRow } from "@/components/dashboard/clickable-table-row";
 
 interface User {
   _id?: string;
@@ -161,7 +162,10 @@ export default function UsersPage() {
                 );
 
                 return (
-                  <TableRow key={userId || index}>
+                  <ClickableTableRow
+                    key={userId || index}
+                    href={userId ? `/dashboard/users/${userId}` : "#"}
+                  >
                     {/* User Profile */}
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -178,9 +182,12 @@ export default function UsersPage() {
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col">
-                          <span className="font-medium text-foreground">
+                          <Link
+                            href={userId ? `/dashboard/users/${userId}` : "#"}
+                            className="font-medium text-foreground hover:underline"
+                          >
                             {user.name || "N/A"}
-                          </span>
+                          </Link>
                           {user.businessName && (
                             <span className="text-[11px] text-muted-foreground">
                               {user.businessName}
@@ -262,18 +269,9 @@ export default function UsersPage() {
                       )}
                     </TableCell>
 
-                    {/* Action Buttons (Edit + Delete) */}
+                    {/* Action Buttons (Delete) */}
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        {userId && (
-                          <Link
-                            href={`/dashboard/users/${userId}`}
-                            className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                          >
-                            <Pencil className="size-3" />
-                            <span>Edit</span>
-                          </Link>
-                        )}
                         {userId && !isSessionUser && (
                           <button
                             type="button"
@@ -286,7 +284,7 @@ export default function UsersPage() {
                         )}
                       </div>
                     </TableCell>
-                  </TableRow>
+                  </ClickableTableRow>
                 );
               })
             )}

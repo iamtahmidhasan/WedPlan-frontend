@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Pencil } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -11,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { formatPrice, type Service } from "@/components/services/service-card";
 import { DeleteServiceButton } from "@/components/services/delete-service-button";
+import { ClickableTableRow } from "@/components/dashboard/clickable-table-row";
 
 export default async function DashboardServicesPage() {
   let services: Service[] = [];
@@ -61,7 +61,10 @@ export default async function DashboardServicesPage() {
                 const coverImage = service.images?.[0];
 
                 return (
-                  <TableRow key={service._id}>
+                  <ClickableTableRow
+                    key={service._id}
+                    href={`/dashboard/services/${service._id}`}
+                  >
                     {/* Service Info */}
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -80,9 +83,12 @@ export default async function DashboardServicesPage() {
                             </div>
                           )}
                         </div>
-                        <span className="font-medium text-foreground">
+                        <Link
+                          href={`/dashboard/services/${service._id}`}
+                          className="font-medium text-foreground hover:underline"
+                        >
                           {service.serviceName}
-                        </span>
+                        </Link>
                       </div>
                     </TableCell>
 
@@ -106,17 +112,10 @@ export default async function DashboardServicesPage() {
                     {/* Actions */}
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        <Link
-                          href={`/dashboard/services/${service._id}`}
-                          className="inline-flex items-center gap-1 rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                        >
-                          <Pencil className="size-3" />
-                          <span>Edit</span>
-                        </Link>
                         <DeleteServiceButton id={service._id} />
                       </div>
                     </TableCell>
-                  </TableRow>
+                  </ClickableTableRow>
                 );
               })
             )}

@@ -36,7 +36,9 @@ export default function EditServicePage({
             location: data.location || "",
             description: data.description || "",
             image:
-              Array.isArray(data.images) && data.images[0] ? data.images[0] : "",
+              Array.isArray(data.images) && data.images[0]
+                ? data.images[0]
+                : "",
           });
         }
       })
@@ -216,11 +218,7 @@ export default function EditServicePage({
         </div>
 
         <div className="flex items-center justify-between border-t pt-4">
-          <Button
-            type="button"
-            variant="destructive"
-            onClick={handleDelete}
-          >
+          <Button type="button" variant="destructive" onClick={handleDelete}>
             Delete Service
           </Button>
 

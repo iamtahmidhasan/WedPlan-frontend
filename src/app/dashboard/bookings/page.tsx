@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -7,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ClickableTableRow } from "@/components/dashboard/clickable-table-row";
 import { type Service } from "@/components/services/service-card";
 import { DeleteBookingButton } from "@/components/bookings/delete-booking-button";
 import { UpdateBookingStatusButton } from "@/components/bookings/update-booking-status-button";
@@ -112,7 +114,12 @@ export default async function DashboardBookingsPage() {
                 const status = (booking.status || "pending").toLowerCase();
 
                 return (
-                  <TableRow key={bookingId}>
+                  <ClickableTableRow
+                    key={bookingId}
+                    href={
+                      booking._id ? `/dashboard/bookings/${booking._id}` : "#"
+                    }
+                  >
                     {/* Service Info */}
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -132,11 +139,18 @@ export default async function DashboardBookingsPage() {
                           )}
                         </div>
                         <div className="flex flex-col">
-                          <span className="font-medium text-foreground">
+                          <Link
+                            href={
+                              booking._id
+                                ? `/dashboard/bookings/${booking._id}`
+                                : "#"
+                            }
+                            className="font-medium text-foreground hover:underline"
+                          >
                             {service?.serviceName ||
                               booking.serviceId ||
                               "Unknown"}
-                          </span>
+                          </Link>
                           {service?.category && (
                             <span className="text-[11px] capitalize text-muted-foreground">
                               {service.category}
@@ -210,13 +224,11 @@ export default async function DashboardBookingsPage() {
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         {booking._id && (
-                          <>
-                            <DeleteBookingButton id={booking._id} />
-                          </>
+                          <DeleteBookingButton id={booking._id} />
                         )}
                       </div>
                     </TableCell>
-                  </TableRow>
+                  </ClickableTableRow>
                 );
               })
             )}
