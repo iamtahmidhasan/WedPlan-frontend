@@ -53,6 +53,9 @@ export function AuthForm({ mode }: AuthFormProps) {
   const content = copy[mode];
   const isSignUp = mode === "sign-up";
   const [name, setName] = useState("");
+  const [role, setRole] = useState<"vendor" | "customer" | "admin">("customer");
+  const [businessName, setBusinessName] = useState("");
+  const [image, setImage] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -65,10 +68,23 @@ export function AuthForm({ mode }: AuthFormProps) {
     setIsSubmitting(true);
 
     const result = isSignUp
-      ? await signUp.email({
+      ? await (signUp.email as (data: {
+          name: string;
+          email: string;
+          password: string;
+          role?: string;
+          image?: string;
+          businessName?: string;
+          isBlocked?: boolean;
+          callbackURL?: string;
+        }) => Promise<{ error?: { message?: string } }>)({
           name,
           email,
           password,
+          role,
+          image: image.trim() || undefined,
+          businessName: role === "vendor" ? businessName.trim() || undefined : undefined,
+          isBlocked: false,
           callbackURL: "/",
         })
       : await signIn.email({
@@ -146,23 +162,82 @@ export function AuthForm({ mode }: AuthFormProps) {
 
       <form className="space-y-5" onSubmit={handleSubmit}>
         {isSignUp && (
-          <div className="space-y-2">
-            <label htmlFor="name" className="text-sm font-medium text-foreground">
-              Your name
-            </label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              autoComplete="name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              className="h-12 w-full rounded-md border border-input bg-background px-3 text-base outline-none transition-colors placeholder:text-muted-foreground hover:bg-secondary focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
-              placeholder="Alex Morgan"
-              required
-              aria-required="true"
-            />
-          </div>
+          <>
+            <div className="space-y-2">
+              <label htmlFor="name" className="text-sm font-medium text-foreground">
+                Your name
+              </label>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                autoComplete="name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                className="h-12 w-full rounded-md border border-input bg-background px-3 text-base outline-none transition-colors placeholder:text-muted-foreground hover:bg-secondary focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
+                placeholder="Alex Morgan"
+                required
+                aria-required="true"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                Role
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {(["vendor", "customer", "admin"] as const).map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setRole(r)}
+                    className={cn(
+                      "h-11 rounded-md border text-sm font-medium capitalize transition-all",
+                      role === r
+                        ? "border-primary bg-primary text-primary-foreground shadow-xs"
+                        : "border-input bg-background text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    )}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {role === "vendor" && (
+              <div className="space-y-2">
+                <label htmlFor="businessName" className="text-sm font-medium text-foreground">
+                  Business name
+                </label>
+                <input
+                  id="businessName"
+                  name="businessName"
+                  type="text"
+                  value={businessName}
+                  onChange={(event) => setBusinessName(event.target.value)}
+                  className="h-12 w-full rounded-md border border-input bg-background px-3 text-base outline-none transition-colors placeholder:text-muted-foreground hover:bg-secondary focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
+                  placeholder="e.g. Blossom Florals, Elite Venues"
+                  required
+                  aria-required="true"
+                />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label htmlFor="image" className="text-sm font-medium text-foreground">
+                Profile image link
+              </label>
+              <input
+                id="image"
+                name="image"
+                type="url"
+                value={image}
+                onChange={(event) => setImage(event.target.value)}
+                className="h-12 w-full rounded-md border border-input bg-background px-3 text-base outline-none transition-colors placeholder:text-muted-foreground hover:bg-secondary focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
+                placeholder="https://example.com/avatar.jpg"
+              />
+            </div>
+          </>
         )}
 
         <div className="space-y-2">
