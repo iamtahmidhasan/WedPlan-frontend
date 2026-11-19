@@ -41,9 +41,7 @@ export default async function DashboardBookmarksPage() {
   try {
     const [bookmarksRes, servicesRes] = await Promise.all([
       fetch(`${API_URL}/bookmarks`, { cache: "no-store" }),
-      fetch(`${API_URL}/services`, { cache: "no-store" }).catch(
-        () => null
-      ),
+      fetch(`${API_URL}/services`, { cache: "no-store" }).catch(() => null),
     ]);
 
     if (bookmarksRes.ok) {
@@ -51,13 +49,13 @@ export default async function DashboardBookmarksPage() {
       // If session user exists, show bookmarks for this user or all if not set
       if (sessionUser) {
         const userBookmarks = allBookmarks.filter(
-          (b) =>
-            !b.userId ||
-            b.userId === sessionUser.id ||
-            (b.userEmail &&
-              b.userEmail.toLowerCase() === sessionUser.email?.toLowerCase())
+          (b) => b.userId === sessionUser.id,
         );
-        bookmarks = userBookmarks.length > 0 ? userBookmarks : allBookmarks;
+        if (session?.user?.role == "admin") {
+          bookmarks = allBookmarks;
+        } else {
+          bookmarks = userBookmarks;
+        }
       } else {
         bookmarks = allBookmarks;
       }
@@ -79,7 +77,8 @@ export default async function DashboardBookmarksPage() {
             <span>Saved Bookmarks</span>
           </h1>
           <p className="text-sm text-muted-foreground">
-            Wedding vendors, venues, and packages you have saved to your wishlist.
+            Wedding vendors, venues, and packages you have saved to your
+            wishlist.
           </p>
         </div>
         <Link
@@ -96,6 +95,9 @@ export default async function DashboardBookmarksPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Service</TableHead>
+              {sessionUser?.role === "admin" && (
+                <TableHead>User Email</TableHead>
+              )}
               <TableHead>Category</TableHead>
               <TableHead>Location</TableHead>
               <TableHead>Price</TableHead>
@@ -120,26 +122,17 @@ export default async function DashboardBookmarksPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              bookmarks.map((bookmark, index) => {
-                const bookmarkId = bookmark._id || String(index);
+              bookmarks.map((bookmark) => {
+                const bookmarkId = bookmark._id;
                 const service = services.find(
-                  (s) => s._id === bookmark.serviceId
+                  (s) => s._id === bookmark.serviceId,
                 );
-                const coverImage = service?.images?.[0] || bookmark.image;
-                const serviceTitle =
-                  service?.serviceName ||
-                  bookmark.serviceName ||
-                  bookmark.serviceId ||
-                  "Wedding Service";
-                const category =
-                  service?.category || bookmark.category || "General";
-                const location =
-                  service?.location || bookmark.location || "N/A";
-                const priceValue =
-                  service?.price ?? bookmark.price;
-                const targetHref = bookmark.serviceId
-                  ? `/services/${bookmark.serviceId}`
-                  : "/services";
+                const coverImage = service?.images?.[0];
+                const serviceTitle = service?.serviceName;
+                const category = service?.category;
+                const location = service?.location;
+                const priceValue = service?.price;
+                const targetHref = `/services/${bookmark.serviceId}`;
 
                 return (
                   <ClickableTableRow key={bookmarkId} href={targetHref}>
@@ -150,7 +143,7 @@ export default async function DashboardBookmarksPage() {
                           {coverImage ? (
                             <Image
                               src={coverImage}
-                              alt={serviceTitle}
+                              alt={serviceTitle as string}
                               fill
                               sizes="40px"
                               className="object-cover"
@@ -169,6 +162,16 @@ export default async function DashboardBookmarksPage() {
                         </Link>
                       </div>
                     </TableCell>
+                    {/* User Info */}
+                    {sessionUser?.role === "admin" && (
+                      <TableCell>
+                        <span className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+                          <Link href={`/dashboard/users/${bookmark.userId}`}>
+                            {bookmark.userEmail}
+                          </Link>
+                        </span>
+                      </TableCell>
+                    )}
 
                     {/* Category */}
                     <TableCell>
@@ -199,13 +202,6 @@ export default async function DashboardBookmarksPage() {
                     {/* Actions */}
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        <Link
-                          href={targetHref}
-                          className="inline-flex items-center gap-1 rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                        >
-                          <span>View</span>
-                          <ExternalLink className="size-3" />
-                        </Link>
                         {bookmark._id && (
                           <DeleteBookmarkButton id={bookmark._id} />
                         )}

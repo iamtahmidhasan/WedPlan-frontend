@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, LogOut, Menu, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -28,7 +28,6 @@ import { cn } from "@/lib/utils";
 export type HeaderMode = "solid" | "overlay";
 
 const navigation = [
-  { label: "Discover", href: "/" },
   { label: "Services", href: "/services" },
   { label: "Vendors", href: "/#vendors" },
   { label: "Bookings", href: "/#bookings" },
@@ -68,7 +67,7 @@ function AccountMenu({
         className={cn(
           "flex items-center gap-2 rounded-full p-1 text-foreground outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring",
           isTransparent &&
-            "max-lg:text-white max-lg:hover:bg-white/10 max-lg:focus-visible:ring-white"
+            "max-lg:text-white max-lg:hover:bg-white/10 max-lg:focus-visible:ring-white",
         )}
         aria-label={`Open account menu for ${displayName}`}
       >
@@ -82,13 +81,19 @@ function AccountMenu({
       <DropdownMenuContent align="end" className="min-w-56">
         <DropdownMenuGroup>
           <DropdownMenuLabel className="space-y-0.5">
-            <span className="block truncate text-foreground">{displayName}</span>
+            <span className="block truncate text-foreground">
+              {displayName}
+            </span>
             {user.name && (
               <span className="block truncate font-normal">{user.email}</span>
             )}
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
+        <DropdownMenuItem>
+          <LayoutDashboard size={3} />
+          <Link href="/dashboard">Dashboard</Link>
+        </DropdownMenuItem>
         <DropdownMenuItem
           disabled={isSigningOut}
           onClick={onSignOut}
@@ -107,7 +112,7 @@ function LoadingAccount({ isTransparent }: { isTransparent: boolean }) {
     <div
       className={cn(
         "size-9 rounded-full motion-safe:animate-pulse motion-reduce:animate-none",
-        isTransparent ? "bg-white/30" : "bg-muted"
+        isTransparent ? "bg-white/30" : "bg-muted",
       )}
       aria-label="Loading account"
       role="status"
@@ -203,7 +208,7 @@ export function Header({ mode = "solid" }: { mode?: HeaderMode }) {
 
     if (result.error) {
       setSignOutError(
-        result.error.message || "We couldn’t sign you out. Please try again."
+        result.error.message || "We couldn’t sign you out. Please try again.",
       );
       setIsSigningOut(false);
       return;
@@ -219,7 +224,7 @@ export function Header({ mode = "solid" }: { mode?: HeaderMode }) {
           "fixed inset-x-0 top-0 z-50 h-16 border-b transition-colors duration-300",
           isTransparent
             ? "border-transparent bg-transparent"
-            : "border-border bg-background"
+            : "border-border bg-background",
         )}
       >
         <div className="mx-auto flex h-full max-w-7xl items-center justify-between gap-4 px-6 sm:px-10 lg:grid lg:grid-cols-[1fr_auto_1fr]">
@@ -230,7 +235,7 @@ export function Header({ mode = "solid" }: { mode?: HeaderMode }) {
               "font-heading text-3xl tracking-[-0.04em] outline-none focus-visible:ring-2 lg:justify-self-start",
               isTransparent
                 ? "text-white focus-visible:ring-white"
-                : "text-foreground focus-visible:ring-ring"
+                : "text-foreground focus-visible:ring-ring",
             )}
           >
             WedPlan
@@ -257,7 +262,7 @@ export function Header({ mode = "solid" }: { mode?: HeaderMode }) {
                 className={cn(
                   "flex size-10 items-center justify-center rounded-md text-foreground outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring lg:hidden",
                   isTransparent &&
-                    "max-lg:text-white max-lg:hover:bg-white/10 max-lg:focus-visible:ring-white"
+                    "max-lg:text-white max-lg:hover:bg-white/10 max-lg:focus-visible:ring-white",
                 )}
                 aria-label={
                   isMenuOpen ? "Close navigation menu" : "Open navigation menu"
@@ -276,7 +281,9 @@ export function Header({ mode = "solid" }: { mode?: HeaderMode }) {
                 className="!top-16 !bottom-0 !left-0 !right-0 !h-[calc(100dvh-4rem)] w-full max-w-none border-b-0 p-0 lg:hidden"
               >
                 <SheetHeader className="border-b border-border px-6 py-5 text-left">
-                  <SheetTitle className="font-heading text-2xl">WedPlan</SheetTitle>
+                  <SheetTitle className="font-heading text-2xl">
+                    WedPlan
+                  </SheetTitle>
                   <SheetDescription>
                     Make room for the good part.
                   </SheetDescription>

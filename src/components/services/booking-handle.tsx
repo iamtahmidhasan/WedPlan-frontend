@@ -1,8 +1,16 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { Calendar, MapPin, Send, LoaderCircle, AlertCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  Calendar,
+  CalendarCheck,
+  MapPin,
+  Send,
+  LoaderCircle,
+  AlertCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   Sheet,
@@ -35,6 +43,7 @@ interface BookingHandleProps {
   serviceName?: string;
   defaultLocation?: string;
   price?: number;
+  initialBooked?: boolean;
 }
 
 export function BookingHandle({
@@ -43,10 +52,13 @@ export function BookingHandle({
   serviceName,
   defaultLocation = "",
   price,
+  initialBooked = false,
 }: BookingHandleProps) {
+  const router = useRouter();
   const { data: session, isPending } = useSession();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [hasBooked, setHasBooked] = useState(initialBooked);
 
   const [eventDate, setEventDate] = useState("");
   const [eventLocation, setEventLocation] = useState(defaultLocation);
@@ -54,8 +66,59 @@ export function BookingHandle({
 
   const user = session?.user;
   const role = (user as { role?: string } | undefined)?.role || "customer";
-  const customerId =
-    user?.id || (user as { _id?: string })?._id || user?.email || "";
+  const customerId = user?.id || "";
+
+  // Check if session user already booked this service
+  useEffect(() => {
+    if (!session?.user?.id && !session?.user?.email) return;
+
+    fetch(`${API_URL}/bookings`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((bookings: Booking[]) => {
+        if (Array.isArray(bookings)) {
+          const booked = bookings.some((b) => {
+            const matchesService = b.serviceId === serviceId;
+            const matchesUser =
+              (session.user.id &&
+                (b.customerId === session.user.id ||
+                  (b as { userId?: string }).userId === session.user.id)) ||
+              (session.user.email &&
+                ((
+                  b as { customerEmail?: string }
+                ).customerEmail?.toLowerCase() ===
+                  session.user.email.toLowerCase() ||
+                  (b as { userEmail?: string }).userEmail?.toLowerCase() ===
+                    session.user.email.toLowerCase()));
+            const isNotCancelled =
+              !b.status || b.status.toLowerCase() !== "cancelled";
+
+            return matchesService && matchesUser && isNotCancelled;
+          });
+          setHasBooked(booked);
+        }
+      })
+      .catch((err) => console.error("Error checking booking status:", err));
+  }, [serviceId, session?.user]);
+
+  // If user role is vendor, remove booking button
+  if (role === "vendor") {
+    return null;
+  }
+
+  // If already booked, render disabled button
+  if (hasBooked) {
+    return (
+      <button
+        type="button"
+        disabled
+        className="inline-flex h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-md border border-border bg-muted/60 px-8 text-base font-medium text-muted-foreground cursor-not-allowed opacity-80"
+        title="You have already booked this service"
+      >
+        <CalendarCheck className="size-4 text-emerald-600 dark:text-emerald-400" />
+        <span>Already Booked</span>
+      </button>
+    );
+  }
 
   // Customer role check
   const isCustomer = role === "customer";
@@ -103,9 +166,11 @@ export function BookingHandle({
         description: "The vendor will review your details and get in touch.",
       });
 
+      setHasBooked(true);
       setMessage("");
       setEventDate("");
       setOpen(false);
+      router.refresh();
     } catch (err) {
       const errorMsg =
         err instanceof Error ? err.message : "Something went wrong.";

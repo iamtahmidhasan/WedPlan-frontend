@@ -35,12 +35,6 @@ export const commonNavigationItems = [
     exact: true,
   },
   {
-    name: "Services",
-    href: "/dashboard/services",
-    icon: Sparkles,
-    exact: false,
-  },
-  {
     name: "Bookings",
     href: "/dashboard/bookings",
     icon: CalendarCheck,
@@ -68,9 +62,22 @@ export const menuItemByRole = {
       icon: Users,
       exact: false,
     },
+    {
+      name: "Services",
+      href: "/dashboard/services",
+      icon: Sparkles,
+      exact: false,
+    },
   ],
   customer: [],
-  vendor: [],
+  vendor: [
+    {
+      name: "Services",
+      href: "/dashboard/services",
+      icon: Sparkles,
+      exact: false,
+    },
+  ],
 };
 
 function getInitials(name?: string, email?: string): string {
@@ -98,7 +105,9 @@ function NavigationContent({ onItemClick, variant = "card" }: NavContentProps) {
     | undefined;
 
   const roleItems =
-    role && role in menuItemByRole ? menuItemByRole[role] : menuItemByRole.admin;
+    role && role in menuItemByRole
+      ? menuItemByRole[role]
+      : menuItemByRole.admin;
 
   const navigationItems = [
     commonNavigationItems[0],
@@ -127,11 +136,17 @@ function NavigationContent({ onItemClick, variant = "card" }: NavContentProps) {
         "flex flex-col text-foreground",
         isSheet
           ? "h-full justify-between bg-card text-foreground"
-          : "h-fit rounded-2xl border border-border/80 bg-card p-4 shadow-xs"
+          : "h-fit rounded-2xl border border-border/80 bg-card p-4 shadow-xs",
       )}
     >
       {/* Header Section */}
-      <div className={cn(isSheet ? "border-b border-border p-5 pr-12" : "mb-4 border-b border-border/60 px-2 pb-4")}>
+      <div
+        className={cn(
+          isSheet
+            ? "border-b border-border p-5 pr-12"
+            : "mb-4 border-b border-border/60 px-2 pb-4",
+        )}
+      >
         <Link
           href="/dashboard"
           onClick={onItemClick}
@@ -150,7 +165,12 @@ function NavigationContent({ onItemClick, variant = "card" }: NavContentProps) {
       </div>
 
       {/* Main Menu Links */}
-      <div className={cn("space-y-1", isSheet && "flex-1 overflow-y-auto px-4 py-5")}>
+      <div
+        className={cn(
+          "space-y-1",
+          isSheet && "flex-1 overflow-y-auto px-4 py-5",
+        )}
+      >
         <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
           Menu
         </p>
@@ -190,7 +210,11 @@ function NavigationContent({ onItemClick, variant = "card" }: NavContentProps) {
         </nav>
 
         {/* Back to Website Link */}
-        <div className={cn(isSheet ? "pt-4" : "mt-4 border-t border-border/60 pt-3")}>
+        <div
+          className={cn(
+            isSheet ? "pt-4" : "mt-4 border-t border-border/60 pt-3",
+          )}
+        >
           <Link
             href="/"
             onClick={onItemClick}
@@ -204,7 +228,13 @@ function NavigationContent({ onItemClick, variant = "card" }: NavContentProps) {
 
       {/* User Account Section */}
       {user && (
-        <div className={cn(isSheet ? "border-t border-border bg-secondary/20 p-4" : "mt-3 border-t border-border/60 pt-3")}>
+        <div
+          className={cn(
+            isSheet
+              ? "border-t border-border bg-secondary/20 p-4"
+              : "mt-3 border-t border-border/60 pt-3",
+          )}
+        >
           <Link
             href="/dashboard/profile"
             onClick={onItemClick}
@@ -256,7 +286,10 @@ export function DashboardSidebar() {
             <Menu className="size-4" />
           </SheetTrigger>
           {/* Off-Canvas Sheet Drawer */}
-          <SheetContent side="left" className="w-[300px] border-r border-border bg-card p-0 sm:max-w-xs">
+          <SheetContent
+            side="left"
+            className="w-[300px] border-r border-border bg-card p-0 sm:max-w-xs"
+          >
             <SheetHeader className="sr-only">
               <SheetTitle>Off-Canvas Dashboard Navigation</SheetTitle>
             </SheetHeader>

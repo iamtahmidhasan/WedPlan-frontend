@@ -28,6 +28,7 @@ import { formatPrice, type Service } from "@/components/services/service-card";
 import { DeleteServiceButton } from "@/components/services/delete-service-button";
 import { DeleteBookingButton } from "@/components/bookings/delete-booking-button";
 import { UpdateBookingStatusButton } from "@/components/bookings/update-booking-status-button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { API_URL } from "@/lib/config";
 
 interface Booking {
@@ -158,8 +159,6 @@ export default function EditUserPage({
   }
 
   async function handleDeleteUser() {
-    if (!confirm("Are you sure you want to delete this user?")) return;
-
     try {
       const res = await fetch(`${API_URL}/users/${id}`, {
         method: "DELETE",
@@ -364,13 +363,17 @@ export default function EditUserPage({
           <div className="flex items-center justify-between border-t pt-4">
             <div>
               {!isSessionUser && (
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={handleDeleteUser}
-                >
-                  Delete User
-                </Button>
+                <ConfirmDialog
+                  title="Delete User"
+                  description="Are you sure you want to delete this user? All their associated data may be permanently removed."
+                  confirmLabel="Delete User"
+                  onConfirm={handleDeleteUser}
+                  trigger={
+                    <Button type="button" variant="destructive">
+                      Delete User
+                    </Button>
+                  }
+                />
               )}
             </div>
             <div className="flex items-center gap-2">

@@ -17,6 +17,7 @@ interface UpdateBookingStatusButtonProps {
   id: string;
   currentStatus?: string;
   variant?: "button" | "badge";
+  role?: string;
 }
 
 const STATUS_OPTIONS = [
@@ -29,10 +30,12 @@ export function UpdateBookingStatusButton({
   id,
   currentStatus = "pending",
   variant = "button",
+  role,
 }: UpdateBookingStatusButtonProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const status = currentStatus.toLowerCase();
+  const isCustomer = role?.toLowerCase() === "customer";
 
   async function handleUpdateStatus(newStatus: string) {
     if (newStatus === status) return;
@@ -58,6 +61,38 @@ export function UpdateBookingStatusButton({
       setLoading(false);
     }
   }
+
+  // If customer and status is not pending, render as static non-clickable badge
+  if (isCustomer && status !== "pending") {
+    return (
+      <span
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize",
+          status === "confirmed" &&
+            "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+          status === "cancelled" &&
+            "bg-destructive/15 text-destructive",
+          status !== "confirmed" &&
+            status !== "cancelled" &&
+            "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+        )}
+      >
+        <span
+          className={cn(
+            "size-1.5 rounded-full",
+            status === "confirmed" && "bg-emerald-500",
+            status === "cancelled" && "bg-destructive",
+            status !== "confirmed" && status !== "cancelled" && "bg-amber-500"
+          )}
+        />
+        <span>{status}</span>
+      </span>
+    );
+  }
+
+  const availableOptions = isCustomer
+    ? STATUS_OPTIONS.filter((opt) => opt.value === "pending" || opt.value === "cancelled")
+    : STATUS_OPTIONS;
 
   return (
     <DropdownMenu>
@@ -106,7 +141,7 @@ export function UpdateBookingStatusButton({
       )}
 
       <DropdownMenuContent align="end" className="min-w-36">
-        {STATUS_OPTIONS.map((opt) => (
+        {availableOptions.map((opt) => (
           <DropdownMenuItem
             key={opt.value}
             onClick={() => handleUpdateStatus(opt.value)}

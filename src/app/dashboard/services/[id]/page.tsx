@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { API_URL } from "@/lib/config";
 
 export default function EditServicePage({
@@ -76,8 +77,6 @@ export default function EditServicePage({
   }
 
   async function handleDelete() {
-    if (!confirm("Are you sure you want to delete this service?")) return;
-
     try {
       const res = await fetch(`${API_URL}/services/${id}`, {
         method: "DELETE",
@@ -219,9 +218,17 @@ export default function EditServicePage({
         </div>
 
         <div className="flex items-center justify-between border-t pt-4">
-          <Button type="button" variant="destructive" onClick={handleDelete}>
-            Delete Service
-          </Button>
+          <ConfirmDialog
+            title="Delete Service"
+            description="Are you sure you want to delete this service? This action cannot be undone."
+            confirmLabel="Delete Service"
+            onConfirm={handleDelete}
+            trigger={
+              <Button type="button" variant="destructive">
+                Delete Service
+              </Button>
+            }
+          />
 
           <div className="flex items-center gap-2">
             <Link

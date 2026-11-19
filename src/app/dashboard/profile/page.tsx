@@ -1,20 +1,16 @@
-"use client";
-
-import { useEffect, useState, type FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { headers } from "next/headers";
+import { revalidatePath } from "next/cache";
 import {
   CalendarCheck,
   CheckCircle2,
-  Loader2,
   Sparkles,
   Store,
   User as UserIcon,
   Shield,
   Clock,
 } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -25,7 +21,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { formatPrice, type Service } from "@/components/services/service-card";
 import { DeleteServiceButton } from "@/components/services/delete-service-button";
@@ -33,6 +28,7 @@ import { DeleteBookingButton } from "@/components/bookings/delete-booking-button
 import { UpdateBookingStatusButton } from "@/components/bookings/update-booking-status-button";
 import { ClickableTableRow } from "@/components/dashboard/clickable-table-row";
 import { API_URL } from "@/lib/config";
+import { auth } from "@/lib/auth";
 
 interface Booking {
   _id?: string;
@@ -48,13 +44,11 @@ interface Booking {
 
 interface DBUser {
   _id?: string;
-  id?: string;
   name?: string;
   email?: string;
   image?: string | null;
   role?: string;
   businessName?: string;
-  isBlocked?: boolean;
   emailVerified?: boolean;
   createdAt?: string;
 }
@@ -66,143 +60,15 @@ const TABS = [
   { id: "vendor", label: "Vendor Info", icon: Store },
 ] as const;
 
-type TabType = (typeof TABS)[number]["id"];
-
-export default function ProfilePage() {
-  const router = useRouter();
-  const { data: session, isPending: sessionLoading } = useSession();
-  const sessionUser = session?.user;
-
-  const [activeTab, setActiveTab] = useState<TabType>("personal");
-
-  const [user, setUser] = useState({
-    _id: "",
-    name: "",
-    email: "",
-    image: "",
-    role: "customer",
-    businessName: "",
-    isBlocked: false,
-    emailVerified: false,
-    createdAt: "",
+export default async function ProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
   });
-
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [services, setServices] = useState<Service[]>([]);
-  const [allServices, setAllServices] = useState<Service[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (!sessionUser) return;
-
-    Promise.all([
-      fetch(`${API_URL}/users`).then((res) =>
-        res.ok ? res.json() : []
-      ),
-      fetch(`${API_URL}/bookings`).then((res) =>
-        res.ok ? res.json() : []
-      ),
-      fetch(`${API_URL}/services`).then((res) =>
-        res.ok ? res.json() : []
-      ),
-    ])
-      .then(([usersData, bookingsData, servicesData]) => {
-        const usersList: DBUser[] = Array.isArray(usersData) ? usersData : [];
-        const matched = usersList.find(
-          (u) =>
-            (sessionUser.id && (u._id === sessionUser.id || u.id === sessionUser.id)) ||
-            (sessionUser.email &&
-              u.email?.toLowerCase() === sessionUser.email.toLowerCase())
-        );
-
-        const currentUserId = matched?._id || matched?.id || sessionUser.id || "";
-
-        setUser({
-          _id: currentUserId,
-          name: matched?.name || sessionUser.name || "",
-          email: matched?.email || sessionUser.email || "",
-          image: matched?.image || sessionUser.image || "",
-          role: matched?.role || (sessionUser as { role?: string })?.role || "customer",
-          businessName: matched?.businessName || "",
-          isBlocked: Boolean(matched?.isBlocked),
-          emailVerified: Boolean(matched?.emailVerified),
-          createdAt: matched?.createdAt || "",
-        });
-
-        const allServs: Service[] = Array.isArray(servicesData) ? servicesData : [];
-        setAllServices(allServs);
-
-        // Filter services for current user
-        const userServices = allServs.filter(
-          (s) =>
-            s.vendorId === currentUserId ||
-            (matched?._id && s.vendorId === matched._id) ||
-            s.vendorId === sessionUser.id ||
-            s.vendorId === sessionUser.email
-        );
-        setServices(userServices);
-
-        // Filter bookings for current user (as customer or vendor)
-        const allBooks: Booking[] = Array.isArray(bookingsData) ? bookingsData : [];
-        const userBookings = allBooks.filter(
-          (b) =>
-            b.customerId === currentUserId ||
-            b.vendorId === currentUserId ||
-            (matched?._id &&
-              (b.customerId === matched._id || b.vendorId === matched._id)) ||
-            b.customerId === sessionUser.id ||
-            b.customerId === sessionUser.email ||
-            b.vendorId === sessionUser.id ||
-            b.vendorId === sessionUser.email
-        );
-        setBookings(userBookings);
-      })
-      .catch((err) => console.error("Error loading profile data:", err))
-      .finally(() => setLoading(false));
-  }, [sessionUser, sessionLoading]);
-
-  async function handleSaveProfile(e: FormEvent) {
-    e.preventDefault();
-    if (!user._id) {
-      toast.error("User profile ID not found");
-      return;
-    }
-
-    setSaving(true);
-    const payload = {
-      name: user.name.trim(),
-      image: user.image.trim(),
-      businessName: user.businessName.trim(),
-      role: user.role,
-    };
-
-    try {
-      const res = await fetch(`${API_URL}/users/${user._id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) throw new Error("Failed to update profile");
-
-      toast.success("Profile information updated successfully");
-      router.refresh();
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to update profile");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  if (sessionLoading || (Boolean(sessionUser) && loading)) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  const sessionUser = session?.user;
 
   if (!sessionUser) {
     return (
@@ -221,7 +87,80 @@ export default function ProfilePage() {
     );
   }
 
-  const initials = (user.name || user.email || "U")
+  const { tab } = await searchParams;
+
+  const [usersRes, bookingsRes, servicesRes] = await Promise.all([
+    fetch(`${API_URL}/users`, { cache: "no-store" }),
+    fetch(`${API_URL}/bookings`, { cache: "no-store" }),
+    fetch(`${API_URL}/services`, { cache: "no-store" }),
+  ]);
+
+  const allUsers: DBUser[] = usersRes.ok ? await usersRes.json() : [];
+  const allBookings: Booking[] = bookingsRes.ok ? await bookingsRes.json() : [];
+  const allServices: Service[] = servicesRes.ok ? await servicesRes.json() : [];
+
+  const matched = allUsers.find((u) => u._id === sessionUser.id);
+  const userId = matched?._id ?? sessionUser.id;
+
+  const user = {
+    _id: userId,
+    name: matched?.name ?? sessionUser.name ?? "",
+    email: matched?.email ?? sessionUser.email ?? "",
+    image: matched?.image ?? sessionUser.image ?? "",
+    role: matched?.role ?? (sessionUser as { role?: string }).role ?? "customer",
+    businessName: matched?.businessName ?? "",
+    emailVerified: matched?.emailVerified ?? false,
+    createdAt: matched?.createdAt ?? "",
+  };
+
+  const isVendor = user.role === "vendor";
+  const isCustomer = user.role === "customer";
+
+  // Role-based tabs:
+  // - Customer: Personal Information, My Bookings
+  // - Vendor & Admin: All tabs (Personal, Bookings, Services, Vendor Info)
+  const customerTabIds = ["personal", "bookings"];
+  const visibleTabs = isCustomer
+    ? TABS.filter((t) => customerTabIds.includes(t.id))
+    : TABS;
+
+  const isTabAllowed = visibleTabs.some((t) => t.id === tab);
+  const activeTab = isTabAllowed ? (tab ?? "personal") : "personal";
+
+  const userServices = allServices.filter((s) => s.vendorId === userId);
+  const userBookings = isVendor
+    ? allBookings.filter((b) => b.vendorId === userId)
+    : allBookings.filter((b) => b.customerId === userId);
+
+  async function updateProfile(formData: FormData) {
+    "use server";
+    const name = String(formData.get("name") ?? "").trim();
+    const image = String(formData.get("image") ?? "").trim();
+
+    await fetch(`${API_URL}/users/${userId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, image }),
+    });
+
+    revalidatePath("/dashboard/profile");
+  }
+
+  async function updateVendor(formData: FormData) {
+    "use server";
+    const businessName = String(formData.get("businessName") ?? "").trim();
+    const role = String(formData.get("role") ?? "customer").trim();
+
+    await fetch(`${API_URL}/users/${userId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ businessName, role }),
+    });
+
+    revalidatePath("/dashboard/profile");
+  }
+
+  const initials = (user.name ?? user.email ?? "U")
     .split(" ")
     .map((p) => p[0]?.toUpperCase())
     .slice(0, 2)
@@ -237,7 +176,7 @@ export default function ProfilePage() {
               {user.image && (
                 <AvatarImage
                   src={user.image}
-                  alt={user.name || "User"}
+                  alt={user.name ?? "User"}
                   referrerPolicy="no-referrer"
                 />
               )}
@@ -248,7 +187,7 @@ export default function ProfilePage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-bold text-foreground">
-                  {user.name || "My Profile"}
+                  {user.name ?? "My Profile"}
                 </h1>
                 {user.emailVerified && (
                   <span title="Email Verified">
@@ -276,30 +215,30 @@ export default function ProfilePage() {
 
       {/* Tabs Navigation */}
       <div className="flex border-b border-border overflow-x-auto gap-2">
-        {TABS.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
+        {visibleTabs.map((tabItem) => {
+          const Icon = tabItem.icon;
+          const isActive = activeTab === tabItem.id;
           const count =
-            tab.id === "bookings"
-              ? bookings.length
-              : tab.id === "services"
-              ? services.length
+            tabItem.id === "bookings"
+              ? userBookings.length
+              : tabItem.id === "services"
+              ? userServices.length
               : null;
 
           return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
+            <Link
+              key={tabItem.id}
+              href={`/dashboard/profile?tab=${tabItem.id}`}
+              scroll={false}
               className={cn(
-                "inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors whitespace-nowrap cursor-pointer",
+                "inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors whitespace-nowrap",
                 isActive
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:border-muted hover:text-foreground"
               )}
             >
               <Icon className="size-4" />
-              <span>{tab.label}</span>
+              <span>{tabItem.label}</span>
               {typeof count === "number" && (
                 <span
                   className={cn(
@@ -312,7 +251,7 @@ export default function ProfilePage() {
                   {count}
                 </span>
               )}
-            </button>
+            </Link>
           );
         })}
       </div>
@@ -320,7 +259,7 @@ export default function ProfilePage() {
       {/* TAB 1: Personal Information */}
       {activeTab === "personal" && (
         <form
-          onSubmit={handleSaveProfile}
+          action={updateProfile}
           className="rounded-md border bg-card p-6 space-y-6"
         >
           <div className="border-b border-border pb-4">
@@ -338,10 +277,10 @@ export default function ProfilePage() {
               </label>
               <input
                 id="name"
+                name="name"
                 type="text"
                 required
-                value={user.name}
-                onChange={(e) => setUser({ ...user, name: e.target.value })}
+                defaultValue={user.name}
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring"
               />
             </div>
@@ -356,7 +295,7 @@ export default function ProfilePage() {
                 type="email"
                 readOnly
                 disabled
-                value={user.email}
+                defaultValue={user.email}
                 className="h-10 w-full rounded-md border border-input bg-muted/50 px-3 text-sm outline-none cursor-not-allowed opacity-75"
               />
               <p className="text-[11px] text-muted-foreground">
@@ -371,9 +310,9 @@ export default function ProfilePage() {
               </label>
               <input
                 id="image"
+                name="image"
                 type="url"
-                value={user.image}
-                onChange={(e) => setUser({ ...user, image: e.target.value })}
+                defaultValue={user.image}
                 placeholder="https://example.com/avatar.jpg"
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring"
               />
@@ -418,18 +357,8 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* Form Actions */}
           <div className="flex items-center justify-end gap-2 border-t pt-4">
-            <Button type="submit" disabled={saving}>
-              {saving ? (
-                <>
-                  <Loader2 className="size-3.5 animate-spin mr-1.5" />
-                  <span>Saving…</span>
-                </>
-              ) : (
-                "Save Personal Info"
-              )}
-            </Button>
+            <Button type="submit">Save Personal Info</Button>
           </div>
         </form>
       )}
@@ -445,7 +374,7 @@ export default function ProfilePage() {
               </p>
             </div>
             <span className="text-xs text-muted-foreground">
-              Total: {bookings.length} booking(s)
+              Total: {userBookings.length} booking(s)
             </span>
           </div>
 
@@ -462,7 +391,7 @@ export default function ProfilePage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {bookings.length === 0 ? (
+                {userBookings.length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={6}
@@ -478,8 +407,7 @@ export default function ProfilePage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  bookings.map((booking, index) => {
-                    const bookingId = booking._id || String(index);
+                  userBookings.map((booking) => {
                     const serviceItem = allServices.find(
                       (s) => s._id === booking.serviceId
                     );
@@ -487,7 +415,7 @@ export default function ProfilePage() {
 
                     return (
                       <ClickableTableRow
-                        key={bookingId}
+                        key={booking._id}
                         href={booking._id ? `/dashboard/bookings/${booking._id}` : "#"}
                       >
                         <TableCell>
@@ -496,7 +424,7 @@ export default function ProfilePage() {
                               {coverImage ? (
                                 <Image
                                   src={coverImage}
-                                  alt={serviceItem?.serviceName || "Service"}
+                                  alt={serviceItem?.serviceName ?? "Service"}
                                   fill
                                   sizes="40px"
                                   className="object-cover"
@@ -511,27 +439,25 @@ export default function ProfilePage() {
                               href={booking._id ? `/dashboard/bookings/${booking._id}` : "#"}
                               className="font-medium text-foreground hover:underline"
                             >
-                              {serviceItem?.serviceName ||
-                                booking.serviceId ||
-                                "Unknown Service"}
+                              {serviceItem?.serviceName ?? "Service"}
                             </Link>
                           </div>
                         </TableCell>
 
                         <TableCell className="font-medium">
-                          {booking.eventDate || "N/A"}
+                          {booking.eventDate ?? "N/A"}
                         </TableCell>
 
                         <TableCell className="text-muted-foreground">
-                          {booking.eventLocation || "N/A"}
+                          {booking.eventLocation ?? "N/A"}
                         </TableCell>
 
                         <TableCell className="max-w-[180px]">
                           <p
                             className="truncate text-xs text-muted-foreground"
-                            title={booking.message || "No notes"}
+                            title={booking.message ?? "No notes"}
                           >
-                            {booking.message || "—"}
+                            {booking.message ?? "—"}
                           </p>
                         </TableCell>
 
@@ -544,7 +470,7 @@ export default function ProfilePage() {
                             />
                           ) : (
                             <span className="capitalize text-xs font-medium">
-                              {booking.status || "pending"}
+                              {booking.status ?? "pending"}
                             </span>
                           )}
                         </TableCell>
@@ -552,14 +478,7 @@ export default function ProfilePage() {
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1.5">
                             {booking._id && (
-                              <>
-                                <UpdateBookingStatusButton
-                                  id={booking._id}
-                                  currentStatus={booking.status}
-                                  variant="button"
-                                />
-                                <DeleteBookingButton id={booking._id} />
-                              </>
+                              <DeleteBookingButton id={booking._id} />
                             )}
                           </div>
                         </TableCell>
@@ -583,33 +502,14 @@ export default function ProfilePage() {
                 All vendor services and wedding packages listed by you.
               </p>
             </div>
-            {user.role === "vendor" && (
+            {isVendor && (
               <span className="text-xs text-muted-foreground">
-                Total: {services.length} services
+                Total: {userServices.length} services
               </span>
             )}
           </div>
 
-          {user.role !== "vendor" && services.length === 0 ? (
-            <div className="rounded-md border bg-muted/30 p-8 text-center text-sm text-muted-foreground space-y-3">
-              <p className="font-medium text-foreground">Customer Account</p>
-              <p className="max-w-md mx-auto">
-                You are currently registered as a{" "}
-                <span className="font-semibold text-primary">{user.role}</span>.
-                To list and offer wedding services, configure your business name
-                under the Vendor Info tab.
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setActiveTab("vendor")}
-              >
-                Go to Vendor Info
-              </Button>
-            </div>
-          ) : (
-            <div className="rounded-md border bg-card">
+          <div className="rounded-md border bg-card">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -621,7 +521,7 @@ export default function ProfilePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {services.length === 0 ? (
+                  {userServices.length === 0 ? (
                     <TableRow>
                       <TableCell
                         colSpan={5}
@@ -631,7 +531,7 @@ export default function ProfilePage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    services.map((serviceItem) => {
+                    userServices.map((serviceItem) => {
                       const coverImage = serviceItem.images?.[0];
 
                       return (
@@ -672,7 +572,7 @@ export default function ProfilePage() {
                           </TableCell>
 
                           <TableCell className="text-muted-foreground">
-                            {serviceItem.location || "N/A"}
+                            {serviceItem.location ?? "N/A"}
                           </TableCell>
 
                           <TableCell className="font-medium">
@@ -691,14 +591,13 @@ export default function ProfilePage() {
                 </TableBody>
               </Table>
             </div>
-          )}
         </div>
       )}
 
       {/* TAB 4: Vendor Info */}
       {activeTab === "vendor" && (
         <form
-          onSubmit={handleSaveProfile}
+          action={updateVendor}
           className="rounded-md border bg-card p-6 space-y-6"
         >
           <div className="border-b border-border pb-4">
@@ -716,12 +615,10 @@ export default function ProfilePage() {
               </label>
               <input
                 id="businessName"
+                name="businessName"
                 type="text"
                 placeholder="e.g. Dream Weddings Photography & Film"
-                value={user.businessName}
-                onChange={(e) =>
-                  setUser({ ...user, businessName: e.target.value })
-                }
+                defaultValue={user.businessName}
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring"
               />
             </div>
@@ -733,8 +630,8 @@ export default function ProfilePage() {
               </label>
               <select
                 id="vendorRole"
-                value={user.role}
-                onChange={(e) => setUser({ ...user, role: e.target.value })}
+                name="role"
+                defaultValue={user.role}
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm capitalize outline-none focus:border-ring focus:ring-1 focus:ring-ring"
               >
                 <option value="customer">customer</option>
@@ -749,29 +646,20 @@ export default function ProfilePage() {
             <div className="space-y-1">
               <label className="text-sm font-medium">Active Services</label>
               <div className="h-10 rounded-md border border-input bg-muted/30 px-3 flex items-center justify-between text-sm">
-                <span>{services.length} service(s) listed</span>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("services")}
-                  className="text-xs text-primary font-medium hover:underline cursor-pointer"
+                <span>{userServices.length} service(s) listed</span>
+                <Link
+                  href="/dashboard/profile?tab=services"
+                  scroll={false}
+                  className="text-xs text-primary font-medium hover:underline"
                 >
                   View all →
-                </button>
+                </Link>
               </div>
             </div>
           </div>
 
           <div className="flex items-center justify-end gap-2 border-t pt-4">
-            <Button type="submit" disabled={saving}>
-              {saving ? (
-                <>
-                  <Loader2 className="size-3.5 animate-spin mr-1.5" />
-                  <span>Saving…</span>
-                </>
-              ) : (
-                "Save Vendor Info"
-              )}
-            </Button>
+            <Button type="submit">Save Vendor Info</Button>
           </div>
         </form>
       )}

@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { ClickableTableRow } from "@/components/dashboard/clickable-table-row";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { API_URL } from "@/lib/config";
 
 interface User {
@@ -93,8 +94,6 @@ export default function UsersPage() {
   }
 
   async function handleDeleteUser(userId: string) {
-    if (!confirm("Are you sure you want to delete this user?")) return;
-
     try {
       const response = await fetch(`${API_URL}/users/${userId}`, {
         method: "DELETE",
@@ -274,14 +273,21 @@ export default function UsersPage() {
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         {userId && !isSessionUser && (
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteUser(userId)}
-                            className="inline-flex items-center gap-1 rounded-md border border-destructive/30 bg-background px-2.5 py-1 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10 cursor-pointer"
-                          >
-                            <Trash2 className="size-3" />
-                            <span>Delete</span>
-                          </button>
+                          <ConfirmDialog
+                            title="Delete User"
+                            description="Are you sure you want to delete this user? All their associated data may be permanently removed."
+                            confirmLabel="Delete User"
+                            onConfirm={() => handleDeleteUser(userId)}
+                            trigger={
+                              <button
+                                type="button"
+                                className="inline-flex items-center gap-1 rounded-md border border-destructive/30 bg-background px-2.5 py-1 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10 cursor-pointer"
+                              >
+                                <Trash2 className="size-3" />
+                                <span>Delete</span>
+                              </button>
+                            }
+                          />
                         )}
                       </div>
                     </TableCell>

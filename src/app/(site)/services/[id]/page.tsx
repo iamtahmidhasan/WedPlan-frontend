@@ -4,6 +4,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, MapPin } from "lucide-react";
 import { connection } from "next/server";
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
 import {
   formatPrice,
   type Service,
@@ -26,13 +28,48 @@ export default async function ServiceDetailsPage({
 }) {
   await connection();
 
-  const { id } = await params;
-  const response = await fetch(`${SERVICES_API}/${id}`);
+  const [{ id }, session] = await Promise.all([
+    params,
+    auth.api.getSession({
+      headers: await headers(),
+    }),
+  ]);
+
+  const [response, bookingsRes] = await Promise.all([
+    fetch(`${SERVICES_API}/${id}`),
+    fetch(`${API_URL}/bookings`, { cache: "no-store" }).catch(() => null),
+  ]);
 
   if (!response.ok) notFound();
 
   const service = (await response.json()) as Service;
   const [cover, second, third] = service.images;
+
+  const role = (
+    session?.user as { role?: string } | undefined
+  )?.role?.toLowerCase();
+  const isVendor = role === "vendor";
+
+  let initialBooked = false;
+  if (session?.user && bookingsRes && bookingsRes.ok) {
+    const allBookings = await bookingsRes.json();
+    if (Array.isArray(allBookings)) {
+      initialBooked = allBookings.some((b) => {
+        const matchesService = b.serviceId === service._id;
+        const matchesUser =
+          (session.user.id &&
+            (b.customerId === session.user.id || b.userId === session.user.id)) ||
+          (session.user.email &&
+            (b.customerEmail?.toLowerCase() ===
+              session.user.email.toLowerCase() ||
+              b.userEmail?.toLowerCase() === session.user.email.toLowerCase()));
+        const isNotCancelled =
+          !b.status || b.status.toLowerCase() !== "cancelled";
+
+        return matchesService && matchesUser && isNotCancelled;
+      });
+    }
+  }
 
   return (
     <main className="bg-background">
@@ -77,13 +114,16 @@ export default async function ServiceDetailsPage({
             </div>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <BookingHandle
-                serviceId={service._id}
-                vendorId={service.vendorId}
-                serviceName={service.serviceName}
-                defaultLocation={service.location}
-                price={service.price}
-              />
+              {!isVendor && (
+                <BookingHandle
+                  serviceId={service._id}
+                  vendorId={service.vendorId}
+                  serviceName={service.serviceName}
+                  defaultLocation={service.location}
+                  price={service.price}
+                  initialBooked={initialBooked}
+                />
+              )}
               <BookmarkButton
                 serviceId={service._id}
                 serviceName={service.serviceName}

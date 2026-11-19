@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { connection } from "next/server";
 import { ServiceCard, type Service } from "@/components/services/service-card";
 import { API_URL } from "@/lib/config";
 
@@ -13,8 +12,6 @@ export const metadata: Metadata = {
 const SERVICES_API = `${API_URL}/services`;
 
 export default async function ServicesPage() {
-  await connection();
-
   let services: Service[] = [];
   let hasError = false;
 
@@ -44,8 +41,7 @@ export default async function ServicesPage() {
             <h1 className="mt-6 font-heading text-6xl leading-[0.92] tracking-[-0.04em] text-foreground sm:text-7xl lg:text-8xl">
               Find the people
               <br />
-              who make the{" "}
-              <span className="text-primary">day yours.</span>
+              who make the <span className="text-primary">day yours.</span>
             </h1>
             <p className="mt-8 max-w-[46ch] text-base leading-7 text-muted-foreground">
               Considered venues, photographers, florists, and more — gathered in
@@ -115,7 +111,8 @@ export default async function ServicesPage() {
             role="alert"
             className="mb-8 border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
           >
-            We couldn’t load the services right now. Please try again in a moment.
+            We couldn’t load the services right now. Please try again in a
+            moment.
           </p>
         )}
 

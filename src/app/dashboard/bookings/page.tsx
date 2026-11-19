@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { headers } from "next/headers";
 import {
   Table,
   TableBody,
@@ -14,12 +15,14 @@ import { DeleteBookingButton } from "@/components/bookings/delete-booking-button
 import { UpdateBookingStatusButton } from "@/components/bookings/update-booking-status-button";
 import { cn } from "@/lib/utils";
 import { API_URL } from "@/lib/config";
+import { auth } from "@/lib/auth";
 
 interface Booking {
   _id?: string;
   serviceId?: string;
   vendorId?: string;
   customerId?: string;
+  customerEmail?: string;
   eventDate?: string;
   eventLocation?: string;
   message?: string;
@@ -32,9 +35,16 @@ interface UserSummary {
   id?: string;
   name?: string;
   email?: string;
+  role?: string;
+  businessName?: string;
 }
 
 export default async function DashboardBookingsPage() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+  const sessionUser = session?.user;
+
   let bookings: Booking[] = [];
   let services: Service[] = [];
   let users: UserSummary[] = [];
@@ -63,12 +73,86 @@ export default async function DashboardBookingsPage() {
     console.error("Error fetching bookings:", err);
   }
 
+  // Determine user role and ID
+  const matchedUser = sessionUser
+    ? users.find(
+        (u) =>
+          (sessionUser.id && (u._id === sessionUser.id || u.id === sessionUser.id)) ||
+          (sessionUser.email &&
+            u.email?.toLowerCase() === sessionUser.email.toLowerCase())
+      )
+    : null;
+
+  const currentUserId =
+    matchedUser?._id || matchedUser?.id || sessionUser?.id || "";
+  const role = (
+    matchedUser?.role ||
+    (sessionUser as { role?: string })?.role ||
+    "customer"
+  ).toLowerCase();
+
+  // Role-based permissions
+  const showCustomerColumn = role !== "customer";
+  const canDelete = role === "admin";
+
+  // Role-based filtering of bookings:
+  // - Customer: only see their own bookings
+  // - Vendor: only see bookings for their services
+  // - Admin: see all bookings
+  let visibleBookings = bookings;
+
+  if (role === "customer") {
+    visibleBookings = bookings.filter((b) => {
+      const isCustomerIdMatch =
+        (currentUserId && b.customerId === currentUserId) ||
+        (sessionUser?.id && b.customerId === sessionUser.id) ||
+        (matchedUser?._id && b.customerId === matchedUser._id);
+
+      const isCustomerEmailMatch =
+        sessionUser?.email &&
+        b.customerEmail?.toLowerCase() === sessionUser.email.toLowerCase();
+
+      return isCustomerIdMatch || isCustomerEmailMatch;
+    });
+  } else if (role === "vendor") {
+    const vendorServiceIdSet = new Set(
+      services
+        .filter(
+          (s) =>
+            (currentUserId && s.vendorId === currentUserId) ||
+            (sessionUser?.id && s.vendorId === sessionUser.id) ||
+            (matchedUser?._id && s.vendorId === matchedUser._id) ||
+            (matchedUser?.businessName && s.vendorId === matchedUser.businessName)
+        )
+        .map((s) => s._id)
+    );
+
+    visibleBookings = bookings.filter((b) => {
+      const matchesVendorId =
+        (currentUserId && b.vendorId === currentUserId) ||
+        (sessionUser?.id && b.vendorId === sessionUser.id) ||
+        (matchedUser?._id && b.vendorId === matchedUser._id);
+
+      const matchesService = b.serviceId
+        ? vendorServiceIdSet.has(b.serviceId)
+        : false;
+
+      return matchesVendorId || matchesService;
+    });
+  } else if (role === "admin") {
+    visibleBookings = bookings;
+  }
+
   return (
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-bold">Bookings</h1>
         <p className="text-sm text-muted-foreground">
-          All wedding event booking requests and customer reservations.
+          {role === "customer"
+            ? "Your wedding event booking requests and reservations."
+            : role === "vendor"
+            ? "Bookings and reservations for your services."
+            : "All wedding event booking requests and customer reservations."}
         </p>
       </div>
 
@@ -77,7 +161,7 @@ export default async function DashboardBookingsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Service</TableHead>
-              <TableHead>Customer</TableHead>
+              {showCustomerColumn && <TableHead>Customer</TableHead>}
               <TableHead>Event Date</TableHead>
               <TableHead>Location</TableHead>
               <TableHead>Message</TableHead>
@@ -86,17 +170,17 @@ export default async function DashboardBookingsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {bookings.length === 0 ? (
+            {visibleBookings.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={7}
+                  colSpan={showCustomerColumn ? 7 : 6}
                   className="h-24 text-center text-muted-foreground"
                 >
                   No bookings found.
                 </TableCell>
               </TableRow>
             ) : (
-              bookings.map((booking) => {
+              visibleBookings.map((booking) => {
                 const bookingId = booking._id;
                 const service = services.find(
                   (s) => s._id === booking.serviceId,
@@ -161,19 +245,21 @@ export default async function DashboardBookingsPage() {
                       </div>
                     </TableCell>
 
-                    {/* Customer */}
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-medium text-foreground">
-                          {customerDisplay}
-                        </span>
-                        {customer?.email && customer.name && (
-                          <span className="text-[11px] text-muted-foreground">
-                            {customer.email}
+                    {/* Customer (Hidden for customer role) */}
+                    {showCustomerColumn && (
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-foreground">
+                            {customerDisplay}
                           </span>
-                        )}
-                      </div>
-                    </TableCell>
+                          {customer?.email && customer.name && (
+                            <span className="text-[11px] text-muted-foreground">
+                              {customer.email}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                    )}
 
                     {/* Event Date */}
                     <TableCell className="font-medium">
@@ -202,6 +288,7 @@ export default async function DashboardBookingsPage() {
                           id={booking._id}
                           currentStatus={booking.status}
                           variant="badge"
+                          role={role}
                         />
                       ) : (
                         <span
@@ -221,11 +308,20 @@ export default async function DashboardBookingsPage() {
                       )}
                     </TableCell>
 
-                    {/* Actions (Status Update Button + Delete Button) */}
+                    {/* Actions */}
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        {booking._id && (
+                        {canDelete && booking._id ? (
                           <DeleteBookingButton id={booking._id} />
+                        ) : (
+                          booking._id && (
+                            <Link
+                              href={`/dashboard/bookings/${booking._id}`}
+                              className="inline-flex items-center gap-1 rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+                            >
+                              Details
+                            </Link>
+                          )
                         )}
                       </div>
                     </TableCell>
