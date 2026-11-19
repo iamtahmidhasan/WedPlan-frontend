@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LayoutDashboard, LogOut, Menu, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -22,6 +22,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { NavigationContent } from "@/components/dashboard/dashboard-sidebar";
 import { signOut, useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
@@ -91,8 +92,10 @@ function AccountMenu({
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem>
-          <LayoutDashboard size={3} />
-          <Link href="/dashboard">Dashboard</Link>
+          <Link href="/dashboard" className="flex w-full items-center gap-2">
+            <LayoutDashboard className="size-4" />
+            Dashboard
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem
           disabled={isSigningOut}
@@ -197,6 +200,9 @@ export function Header({ mode = "solid" }: { mode?: HeaderMode }) {
     return () => window.removeEventListener("scroll", updateScrolled);
   }, []);
 
+  const pathname = usePathname();
+  const isDashboard = pathname.startsWith("/dashboard");
+
   const isTransparent = mode === "overlay" && !isScrolled && !isMenuOpen;
   const user = session?.user;
 
@@ -228,18 +234,25 @@ export function Header({ mode = "solid" }: { mode?: HeaderMode }) {
         )}
       >
         <div className="mx-auto flex h-full max-w-7xl items-center justify-between gap-4 px-6 sm:px-10 lg:grid lg:grid-cols-[1fr_auto_1fr]">
-          <Link
-            href="/"
-            aria-label="WedPlan home"
-            className={cn(
-              "font-heading text-3xl tracking-[-0.04em] outline-none focus-visible:ring-2 lg:justify-self-start",
-              isTransparent
-                ? "text-white focus-visible:ring-white"
-                : "text-foreground focus-visible:ring-ring",
+          <div className="flex items-center gap-2 lg:justify-self-start">
+            <Link
+              href="/"
+              aria-label="WedPlan home"
+              className={cn(
+                "font-heading text-3xl tracking-[-0.04em] outline-none focus-visible:ring-2",
+                isTransparent
+                  ? "text-white focus-visible:ring-white"
+                  : "text-foreground focus-visible:ring-ring",
+              )}
+            >
+              WedPlan
+            </Link>
+            {isDashboard && (
+              <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                Dashboard
+              </span>
             )}
-          >
-            WedPlan
-          </Link>
+          </div>
 
           <DesktopNavigation />
 
@@ -274,32 +287,47 @@ export function Header({ mode = "solid" }: { mode?: HeaderMode }) {
                   <Menu className="size-5" aria-hidden="true" />
                 )}
               </SheetTrigger>
-              <SheetContent
-                side="top"
-                overlayClassName="top-16"
-                showCloseButton={false}
-                className="!top-16 !bottom-0 !left-0 !right-0 !h-[calc(100dvh-4rem)] w-full max-w-none border-b-0 p-0 lg:hidden"
-              >
-                <SheetHeader className="border-b border-border px-6 py-5 text-left">
-                  <SheetTitle className="font-heading text-2xl">
-                    WedPlan
-                  </SheetTitle>
-                  <SheetDescription>
-                    Make room for the good part.
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="flex-1 px-6 py-8">
-                  <NavigationLinks onNavigate={() => setIsMenuOpen(false)} />
-                </div>
-                {!isPending && !user && (
-                  <div className="border-t border-border px-6 py-6">
-                    <AuthActions
-                      className="grid sm:flex"
-                      onNavigate={() => setIsMenuOpen(false)}
-                    />
+              {isDashboard ? (
+                <SheetContent
+                  side="left"
+                  className="w-[300px] border-r border-border bg-card p-0 sm:max-w-xs lg:hidden"
+                >
+                  <SheetHeader className="sr-only">
+                    <SheetTitle>Off-Canvas Dashboard Navigation</SheetTitle>
+                  </SheetHeader>
+                  <NavigationContent
+                    variant="sheet"
+                    onItemClick={() => setIsMenuOpen(false)}
+                  />
+                </SheetContent>
+              ) : (
+                <SheetContent
+                  side="top"
+                  overlayClassName="top-16"
+                  showCloseButton={false}
+                  className="!top-16 !bottom-0 !left-0 !right-0 !h-[calc(100dvh-4rem)] w-full max-w-none border-b-0 p-0 lg:hidden"
+                >
+                  <SheetHeader className="border-b border-border px-6 py-5 text-left">
+                    <SheetTitle className="font-heading text-2xl">
+                      WedPlan
+                    </SheetTitle>
+                    <SheetDescription>
+                      Make room for the good part.
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="flex-1 px-6 py-8">
+                    <NavigationLinks onNavigate={() => setIsMenuOpen(false)} />
                   </div>
-                )}
-              </SheetContent>
+                  {!isPending && !user && (
+                    <div className="border-t border-border px-6 py-6">
+                      <AuthActions
+                        className="grid sm:flex"
+                        onNavigate={() => setIsMenuOpen(false)}
+                      />
+                    </div>
+                  )}
+                </SheetContent>
+              )}
             </Sheet>
           </div>
         </div>

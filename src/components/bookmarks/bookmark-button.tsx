@@ -24,6 +24,7 @@ interface BookmarkButtonProps {
   location?: string;
   image?: string;
   initialBookmarked?: boolean;
+  isBlocked?: boolean;
 }
 
 export function BookmarkButton({
@@ -34,12 +35,18 @@ export function BookmarkButton({
   location,
   image,
   initialBookmarked = false,
+  isBlocked = false,
 }: BookmarkButtonProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const [isBookmarked, setIsBookmarked] = useState(initialBookmarked);
   const [bookmarkId, setBookmarkId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const sessionBlocked = Boolean(
+    (session?.user as { isBlocked?: boolean } | undefined)?.isBlocked
+  );
+  const userIsBlocked = isBlocked ? true : sessionBlocked;
 
   useEffect(() => {
     if (!session?.user) return;
@@ -48,15 +55,19 @@ export function BookmarkButton({
       .then((res) => (res.ok ? res.json() : []))
       .then((list: BookmarkItem[]) => {
         if (Array.isArray(list)) {
-          const found = list.find(
-            (b) =>
-              b.serviceId === serviceId &&
-              (b.userId === session.user.id ||
-                b.userEmail?.toLowerCase() === session.user.email?.toLowerCase())
-          );
+          const found = list.find((b) => {
+            if (b.serviceId !== serviceId) return false;
+            if (session.user.id && b.userId === session.user.id) return true;
+            if (session.user.email) {
+              const uEmail = b.userEmail?.toLowerCase();
+              const sEmail = session.user.email.toLowerCase();
+              if (uEmail === sEmail) return true;
+            }
+            return false;
+          });
           if (found) {
             setIsBookmarked(true);
-            setBookmarkId(found._id || null);
+            setBookmarkId(found._id ?? null);
           } else {
             setIsBookmarked(false);
             setBookmarkId(null);
@@ -71,6 +82,47 @@ export function BookmarkButton({
       toast.error("Please sign in to bookmark services");
       router.push("/sign-in");
       return;
+    }
+
+    if (userIsBlocked) {
+      toast.error(
+        "Your account has been blocked. You cannot bookmark services."
+      );
+      return;
+    }
+
+    try {
+      const userRes = await fetch(`${API_URL}/users`);
+      if (userRes.ok) {
+        const users = await userRes.json();
+        if (Array.isArray(users)) {
+          let matched = null;
+          if (session.user.id) {
+            matched = users.find(
+              (u: { _id?: string; id?: string }) => u._id === session.user.id
+            );
+            if (!matched) {
+              matched = users.find(
+                (u: { _id?: string; id?: string }) => u.id === session.user.id
+              );
+            }
+          }
+          if (!matched && session.user.email) {
+            const email = session.user.email.toLowerCase();
+            matched = users.find(
+              (u: { email?: string }) => u.email?.toLowerCase() === email
+            );
+          }
+          if (matched?.isBlocked) {
+            toast.error(
+              "Your account has been blocked. You cannot bookmark services."
+            );
+            return;
+          }
+        }
+      }
+    } catch {
+      // Continue if network fails
     }
 
     setLoading(true);
@@ -132,6 +184,22 @@ export function BookmarkButton({
     } finally {
       setLoading(false);
     }
+  }
+
+  if (userIsBlocked) {
+    return (
+      <Button
+        type="button"
+        variant="outline"
+        size="default"
+        disabled
+        title="Your account is blocked. You cannot bookmark services."
+        className="gap-2 cursor-not-allowed opacity-60 h-12 px-6"
+      >
+        <Bookmark className="size-4" />
+        <span>Bookmark</span>
+      </Button>
+    );
   }
 
   return (

@@ -44,6 +44,7 @@ interface BookingHandleProps {
   defaultLocation?: string;
   price?: number;
   initialBooked?: boolean;
+  isBlocked?: boolean;
 }
 
 export function BookingHandle({
@@ -53,6 +54,7 @@ export function BookingHandle({
   defaultLocation = "",
   price,
   initialBooked = false,
+  isBlocked = false,
 }: BookingHandleProps) {
   const router = useRouter();
   const { data: session, isPending } = useSession();
@@ -65,8 +67,13 @@ export function BookingHandle({
   const [message, setMessage] = useState("");
 
   const user = session?.user;
-  const role = (user as { role?: string } | undefined)?.role || "customer";
-  const customerId = user?.id || "";
+  const role = (user as { role?: string } | undefined)?.role ?? "customer";
+  const customerId = user?.id ?? "";
+
+  const sessionBlocked = Boolean(
+    (user as { isBlocked?: boolean } | undefined)?.isBlocked
+  );
+  const userIsBlocked = isBlocked ? true : sessionBlocked;
 
   // Check if session user already booked this service
   useEffect(() => {
@@ -77,28 +84,48 @@ export function BookingHandle({
       .then((bookings: Booking[]) => {
         if (Array.isArray(bookings)) {
           const booked = bookings.some((b) => {
-            const matchesService = b.serviceId === serviceId;
-            const matchesUser =
-              (session.user.id &&
-                (b.customerId === session.user.id ||
-                  (b as { userId?: string }).userId === session.user.id)) ||
-              (session.user.email &&
-                ((
-                  b as { customerEmail?: string }
-                ).customerEmail?.toLowerCase() ===
-                  session.user.email.toLowerCase() ||
-                  (b as { userEmail?: string }).userEmail?.toLowerCase() ===
-                    session.user.email.toLowerCase()));
-            const isNotCancelled =
-              !b.status || b.status.toLowerCase() !== "cancelled";
+            if (b.serviceId !== serviceId) return false;
+            if (b.status && b.status.toLowerCase() === "cancelled") return false;
 
-            return matchesService && matchesUser && isNotCancelled;
+            if (session.user.id) {
+              if (b.customerId === session.user.id) return true;
+              if ((b as { userId?: string }).userId === session.user.id) return true;
+            }
+
+            if (session.user.email) {
+              const userEmail = session.user.email.toLowerCase();
+              const custEmail = (
+                b as { customerEmail?: string }
+              ).customerEmail?.toLowerCase();
+              const uEmail = (
+                b as { userEmail?: string }
+              ).userEmail?.toLowerCase();
+              if (custEmail === userEmail) return true;
+              if (uEmail === userEmail) return true;
+            }
+
+            return false;
           });
           setHasBooked(booked);
         }
       })
       .catch((err) => console.error("Error checking booking status:", err));
   }, [serviceId, session?.user]);
+
+  // If user is blocked, render disabled button
+  if (userIsBlocked) {
+    return (
+      <button
+        type="button"
+        disabled
+        className="inline-flex h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-8 text-base font-medium text-destructive cursor-not-allowed opacity-80"
+        title="Your account is blocked. You cannot book services."
+      >
+        <AlertCircle className="size-4" />
+        <span>Account Blocked</span>
+      </button>
+    );
+  }
 
   // If user role is vendor, remove booking button
   if (role === "vendor") {
@@ -131,9 +158,48 @@ export function BookingHandle({
       return;
     }
 
+    if (userIsBlocked) {
+      toast.error("Your account has been blocked. You cannot book services.");
+      return;
+    }
+
     if (!isCustomer) {
       toast.error("Only customer accounts can book services.");
       return;
+    }
+
+    try {
+      const usersRes = await fetch(`${API_URL}/users`);
+      if (usersRes.ok) {
+        const users = await usersRes.json();
+        if (Array.isArray(users)) {
+          let matched = null;
+          if (customerId) {
+            matched = users.find(
+              (u: { _id?: string; id?: string }) => u._id === customerId
+            );
+            if (!matched) {
+              matched = users.find(
+                (u: { _id?: string; id?: string }) => u.id === customerId
+              );
+            }
+          }
+          if (!matched && user.email) {
+            const email = user.email.toLowerCase();
+            matched = users.find(
+              (u: { email?: string }) => u.email?.toLowerCase() === email
+            );
+          }
+          if (matched?.isBlocked) {
+            toast.error(
+              "Your account has been blocked. You cannot book services."
+            );
+            return;
+          }
+        }
+      }
+    } catch {
+      // Continue if network check fails
     }
 
     setLoading(true);

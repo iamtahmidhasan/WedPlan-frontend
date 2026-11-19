@@ -73,7 +73,6 @@ export default async function DashboardBookmarksPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Bookmark className="size-6 text-primary" />
             <span>Saved Bookmarks</span>
           </h1>
           <p className="text-sm text-muted-foreground">

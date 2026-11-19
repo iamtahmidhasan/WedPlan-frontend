@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -10,19 +9,11 @@ import {
   CalendarCheck,
   Bookmark,
   User,
-  Menu,
   ArrowUpRight,
   ShieldCheck,
   Store,
   HeartHandshake,
 } from "lucide-react";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/lib/auth-client";
@@ -95,7 +86,10 @@ interface NavContentProps {
   variant?: "card" | "sheet";
 }
 
-function NavigationContent({ onItemClick, variant = "card" }: NavContentProps) {
+export function NavigationContent({
+  onItemClick,
+  variant = "card",
+}: NavContentProps) {
   const { data: session } = useSession();
   const pathname = usePathname();
 
@@ -268,43 +262,18 @@ function NavigationContent({ onItemClick, variant = "card" }: NavContentProps) {
 }
 
 export function DashboardSidebar() {
-  const [isOpen, setIsOpen] = useState(false);
+  const { data: session } = useSession();
+
+  const isBlocked = Boolean(
+    (session?.user as { isBlocked?: boolean } | undefined)?.isBlocked
+  );
+  if (isBlocked) {
+    return null;
+  }
 
   return (
-    <>
-      {/* Mobile Top Header with Off-Canvas Trigger */}
-      <header className="flex h-14 w-full items-center justify-between rounded-2xl border border-border/80 bg-card px-4 lg:hidden">
-        <div className="flex items-center gap-2">
-          <span className="font-heading text-xl font-bold">WedPlan</span>
-          <span className="text-xs text-muted-foreground">Dashboard</span>
-        </div>
-        <Sheet open={isOpen} onOpenChange={setIsOpen}>
-          <SheetTrigger
-            aria-label="Open off-canvas navigation menu"
-            className="flex size-9 items-center justify-center rounded-xl border border-border bg-background text-foreground hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <Menu className="size-4" />
-          </SheetTrigger>
-          {/* Off-Canvas Sheet Drawer */}
-          <SheetContent
-            side="left"
-            className="w-[300px] border-r border-border bg-card p-0 sm:max-w-xs"
-          >
-            <SheetHeader className="sr-only">
-              <SheetTitle>Off-Canvas Dashboard Navigation</SheetTitle>
-            </SheetHeader>
-            <NavigationContent
-              variant="sheet"
-              onItemClick={() => setIsOpen(false)}
-            />
-          </SheetContent>
-        </Sheet>
-      </header>
-
-      {/* Desktop Floating Card Sidebar */}
-      <aside className="hidden w-64 shrink-0 lg:block lg:sticky lg:top-8">
-        <NavigationContent variant="card" />
-      </aside>
-    </>
+    <aside className="hidden w-64 shrink-0 lg:block lg:sticky lg:top-24">
+      <NavigationContent variant="card" />
+    </aside>
   );
 }

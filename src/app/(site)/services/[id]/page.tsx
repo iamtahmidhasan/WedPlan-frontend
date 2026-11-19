@@ -13,6 +13,7 @@ import {
 import { BookingHandle } from "@/components/services/booking-handle";
 import { BookmarkButton } from "@/components/bookmarks/bookmark-button";
 import { API_URL } from "@/lib/config";
+import { checkIsUserBlocked } from "@/lib/user-status";
 
 export const metadata: Metadata = {
   title: "Service details | WedPlan",
@@ -50,23 +51,28 @@ export default async function ServiceDetailsPage({
   )?.role?.toLowerCase();
   const isVendor = role === "vendor";
 
+  const isBlocked = await checkIsUserBlocked(session?.user);
+
   let initialBooked = false;
   if (session?.user && bookingsRes && bookingsRes.ok) {
     const allBookings = await bookingsRes.json();
     if (Array.isArray(allBookings)) {
       initialBooked = allBookings.some((b) => {
-        const matchesService = b.serviceId === service._id;
-        const matchesUser =
-          (session.user.id &&
-            (b.customerId === session.user.id || b.userId === session.user.id)) ||
-          (session.user.email &&
-            (b.customerEmail?.toLowerCase() ===
-              session.user.email.toLowerCase() ||
-              b.userEmail?.toLowerCase() === session.user.email.toLowerCase()));
-        const isNotCancelled =
-          !b.status || b.status.toLowerCase() !== "cancelled";
+        if (b.serviceId !== service._id) return false;
+        if (b.status && b.status.toLowerCase() === "cancelled") return false;
 
-        return matchesService && matchesUser && isNotCancelled;
+        if (session.user.id) {
+          if (b.customerId === session.user.id) return true;
+          if (b.userId === session.user.id) return true;
+        }
+
+        if (session.user.email) {
+          const userEmail = session.user.email.toLowerCase();
+          if (b.customerEmail?.toLowerCase() === userEmail) return true;
+          if (b.userEmail?.toLowerCase() === userEmail) return true;
+        }
+
+        return false;
       });
     }
   }
@@ -122,6 +128,7 @@ export default async function ServiceDetailsPage({
                   defaultLocation={service.location}
                   price={service.price}
                   initialBooked={initialBooked}
+                  isBlocked={isBlocked}
                 />
               )}
               <BookmarkButton
@@ -131,6 +138,7 @@ export default async function ServiceDetailsPage({
                 price={service.price}
                 location={service.location}
                 image={cover}
+                isBlocked={isBlocked}
               />
             </div>
 

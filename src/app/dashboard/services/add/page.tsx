@@ -5,6 +5,7 @@ import { ArrowLeft, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
 import { API_URL } from "@/lib/config";
+import { checkIsUserBlocked } from "@/lib/user-status";
 
 export default async function AddServicePage() {
   const session = await auth.api.getSession({
@@ -19,6 +20,13 @@ export default async function AddServicePage() {
       headers: await headers(),
     });
 
+    const isBlocked = await checkIsUserBlocked(currentSession?.user);
+    if (isBlocked) {
+      throw new Error("Your account has been blocked.");
+    }
+
+    const currentUserId = currentSession?.user?.id ?? user?.id ?? "vendor";
+
     const payload = {
       serviceName: formData.get("serviceName"),
       category: formData.get("category"),
@@ -26,7 +34,7 @@ export default async function AddServicePage() {
       location: formData.get("location"),
       description: formData.get("description"),
       images: formData.get("image") ? [formData.get("image")] : [],
-      vendorId: currentSession?.user?.id || user?.id || "vendor",
+      vendorId: currentUserId,
       createdAt: new Date().toISOString(),
     };
 
