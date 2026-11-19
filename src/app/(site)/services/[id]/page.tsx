@@ -14,6 +14,7 @@ import { BookingHandle } from "@/components/services/booking-handle";
 import { BookmarkButton } from "@/components/bookmarks/bookmark-button";
 import { API_URL } from "@/lib/config";
 import { checkIsUserBlocked } from "@/lib/user-status";
+import getBookingCount from "@/lib/getBookingCount";
 
 export const metadata: Metadata = {
   title: "Service details | WedPlan",
@@ -51,7 +52,47 @@ export default async function ServiceDetailsPage({
   )?.role?.toLowerCase();
   const isVendor = role === "vendor";
 
-  const isBlocked = await checkIsUserBlocked(session?.user);
+  const [bookingCount, isBlocked] = await Promise.all([
+    getBookingCount(),
+    checkIsUserBlocked(session?.user),
+  ]);
+
+  let isPremium = Boolean(
+    (session?.user as { isPremium?: boolean } | undefined)?.isPremium
+  );
+
+  if (session?.user && !isPremium) {
+    try {
+      const usersRes = await fetch(`${API_URL}/users`, { cache: "no-store" });
+      if (usersRes.ok) {
+        const users = await usersRes.json();
+        if (Array.isArray(users)) {
+          let matched = null;
+          if (session.user.id) {
+            matched = users.find(
+              (u: { _id?: string; id?: string }) => u._id === session.user.id
+            );
+            if (!matched) {
+              matched = users.find(
+                (u: { _id?: string; id?: string }) => u.id === session.user.id
+              );
+            }
+          }
+          if (!matched && session.user.email) {
+            const email = session.user.email.toLowerCase();
+            matched = users.find(
+              (u: { email?: string }) => u.email?.toLowerCase() === email
+            );
+          }
+          if (matched?.isPremium) {
+            isPremium = true;
+          }
+        }
+      }
+    } catch {
+      // Ignore
+    }
+  }
 
   let initialBooked = false;
   if (session?.user && bookingsRes && bookingsRes.ok) {
@@ -129,6 +170,8 @@ export default async function ServiceDetailsPage({
                   price={service.price}
                   initialBooked={initialBooked}
                   isBlocked={isBlocked}
+                  bookingCount={bookingCount}
+                  isPremium={isPremium}
                 />
               )}
               <BookmarkButton

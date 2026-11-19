@@ -21,6 +21,11 @@ export const auth = betterAuth({
         input: true,
         defaultValue: false,
       },
+      isPremium: {
+        type: "boolean",
+        input: true,
+        defaultValue: false,
+      },
       businessName: {
         type: "string",
         input: true,

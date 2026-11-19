@@ -10,6 +10,7 @@ import {
   Send,
   LoaderCircle,
   AlertCircle,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -45,6 +46,8 @@ interface BookingHandleProps {
   price?: number;
   initialBooked?: boolean;
   isBlocked?: boolean;
+  bookingCount?: number;
+  isPremium?: boolean;
 }
 
 export function BookingHandle({
@@ -55,12 +58,15 @@ export function BookingHandle({
   price,
   initialBooked = false,
   isBlocked = false,
+  bookingCount = 0,
+  isPremium = false,
 }: BookingHandleProps) {
   const router = useRouter();
   const { data: session, isPending } = useSession();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [hasBooked, setHasBooked] = useState(initialBooked);
+  const [localBookingCount, setLocalBookingCount] = useState(bookingCount);
 
   const [eventDate, setEventDate] = useState("");
   const [eventLocation, setEventLocation] = useState(defaultLocation);
@@ -75,6 +81,13 @@ export function BookingHandle({
   );
   const userIsBlocked = isBlocked ? true : sessionBlocked;
 
+  const sessionPremium = Boolean(
+    (user as { isPremium?: boolean } | undefined)?.isPremium
+  );
+  const userIsPremium = isPremium ? true : sessionPremium;
+
+  const currentCount = Math.max(bookingCount, localBookingCount);
+
   // Check if session user already booked this service
   useEffect(() => {
     if (!session?.user?.id && !session?.user?.email) return;
@@ -83,7 +96,16 @@ export function BookingHandle({
       .then((res) => (res.ok ? res.json() : []))
       .then((bookings: Booking[]) => {
         if (Array.isArray(bookings)) {
+          let count = 0;
           const booked = bookings.some((b) => {
+            if (session.user.id) {
+              if (b.customerId === session.user.id) {
+                count += 1;
+              } else if ((b as { userId?: string }).userId === session.user.id) {
+                count += 1;
+              }
+            }
+
             if (b.serviceId !== serviceId) return false;
             if (b.status && b.status.toLowerCase() === "cancelled") return false;
 
@@ -107,6 +129,9 @@ export function BookingHandle({
             return false;
           });
           setHasBooked(booked);
+          if (count > 0) {
+            setLocalBookingCount(count);
+          }
         }
       })
       .catch((err) => console.error("Error checking booking status:", err));
@@ -149,6 +174,20 @@ export function BookingHandle({
 
   // Customer role check
   const isCustomer = role === "customer";
+  const requiresPremium = isCustomer && !userIsPremium && currentCount >= 3;
+
+  // If customer already booked 3 services and is not premium, 4th booking redirects to /premium
+  if (requiresPremium) {
+    return (
+      <Link
+        href="/premium"
+        className="inline-flex h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-8 text-base font-medium text-white shadow-xs transition-opacity hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <Sparkles className="size-4" />
+        <span>Book Service (Upgrade to Premium)</span>
+      </Link>
+    );
+  }
 
   async function handleBookingSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -160,6 +199,14 @@ export function BookingHandle({
 
     if (userIsBlocked) {
       toast.error("Your account has been blocked. You cannot book services.");
+      return;
+    }
+
+    if (requiresPremium) {
+      toast.info(
+        "You have reached the 3 free bookings limit. Upgrade to Premium to book this service."
+      );
+      router.push("/premium");
       return;
     }
 
