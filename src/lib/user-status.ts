@@ -1,4 +1,4 @@
-import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/core/server";
 
 interface MinimalUser {
   id?: string;
@@ -19,7 +19,7 @@ export async function checkIsUserBlocked(
   }
 
   try {
-    const res = await fetch(`${API_URL}/users`, { cache: "no-store" });
+    const res = await apiFetch(`/users`, { cache: "no-store" });
     if (!res.ok) {
       return false;
     }

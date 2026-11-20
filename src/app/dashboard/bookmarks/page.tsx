@@ -14,7 +14,7 @@ import { formatPrice, type Service } from "@/components/services/service-card";
 import { DeleteBookmarkButton } from "@/components/bookmarks/delete-bookmark-button";
 import { ClickableTableRow } from "@/components/dashboard/clickable-table-row";
 import { auth } from "@/lib/auth";
-import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/core/server";
 
 interface BookmarkItem {
   _id?: string;
@@ -40,8 +40,8 @@ export default async function DashboardBookmarksPage() {
 
   try {
     const [bookmarksRes, servicesRes] = await Promise.all([
-      fetch(`${API_URL}/bookmarks`, { cache: "no-store" }),
-      fetch(`${API_URL}/services`, { cache: "no-store" }).catch(() => null),
+      apiFetch(`/bookmarks`, { cache: "no-store" }),
+      apiFetch(`/services`, { cache: "no-store" }).catch(() => null),
     ]);
 
     if (bookmarksRes.ok) {

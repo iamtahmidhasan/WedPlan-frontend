@@ -12,7 +12,7 @@ import {
 } from "@/components/services/service-card";
 import { BookingHandle } from "@/components/services/booking-handle";
 import { BookmarkButton } from "@/components/bookmarks/bookmark-button";
-import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/core/server";
 import { checkIsUserBlocked } from "@/lib/user-status";
 import getBookingCount from "@/lib/getBookingCount";
 
@@ -21,7 +21,6 @@ export const metadata: Metadata = {
   description: "Explore the details of a WedPlan service.",
 };
 
-const SERVICES_API = `${API_URL}/services`;
 
 export default async function ServiceDetailsPage({
   params,
@@ -38,8 +37,8 @@ export default async function ServiceDetailsPage({
   ]);
 
   const [response, bookingsRes] = await Promise.all([
-    fetch(`${SERVICES_API}/${id}`),
-    fetch(`${API_URL}/bookings`, { cache: "no-store" }).catch(() => null),
+    apiFetch(`/services?id=${id}`),
+    apiFetch(`/bookings`, { cache: "no-store" }).catch(() => null),
   ]);
 
   if (!response.ok) notFound();
@@ -63,7 +62,7 @@ export default async function ServiceDetailsPage({
 
   if (session?.user && !isPremium) {
     try {
-      const usersRes = await fetch(`${API_URL}/users`, { cache: "no-store" });
+      const usersRes = await apiFetch(`/users`, { cache: "no-store" });
       if (usersRes.ok) {
         const users = await usersRes.json();
         if (Array.isArray(users)) {

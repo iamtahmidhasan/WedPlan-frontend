@@ -17,7 +17,7 @@ import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { ClickableTableRow } from "@/components/dashboard/clickable-table-row";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/core/client";
 
 interface User {
   _id?: string;
@@ -44,7 +44,7 @@ export default function UsersPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const fetchUsers = () => {
-    fetch(`${API_URL}/users`)
+    apiFetch(`/users`)
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
@@ -71,7 +71,7 @@ export default function UsersPage() {
     );
 
     try {
-      const response = await fetch(`${API_URL}/users/${userId}`, {
+      const response = await apiFetch(`/users?id=${userId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -95,7 +95,7 @@ export default function UsersPage() {
 
   async function handleDeleteUser(userId: string) {
     try {
-      const response = await fetch(`${API_URL}/users/${userId}`, {
+      const response = await apiFetch(`/users?id=${userId}`, {
         method: "DELETE",
       });
 

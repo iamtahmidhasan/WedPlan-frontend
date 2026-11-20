@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { ArrowLeft, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
-import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/core/server";
 import { checkIsUserBlocked } from "@/lib/user-status";
 import { getPremiumById } from "@/lib/actions/getPremiumById";
 
@@ -29,7 +29,7 @@ export default async function AddServicePage() {
     const currentUserId = currentSession?.user?.id ?? user?.id ?? "vendor";
 
     if (currentSession?.user?.role === "vendor") {
-      const servicesRes = await fetch(`${API_URL}/services`, {
+      const servicesRes = await apiFetch(`/services`, {
         cache: "no-store",
       });
       const services: { vendorId: string }[] = servicesRes.ok
@@ -56,7 +56,7 @@ export default async function AddServicePage() {
       createdAt: new Date().toISOString(),
     };
 
-    await fetch(`${API_URL}/services`, {
+    await apiFetch(`/services`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

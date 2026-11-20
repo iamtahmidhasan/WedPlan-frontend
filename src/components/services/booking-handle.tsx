@@ -23,7 +23,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
 import { formatPrice } from "@/components/services/service-card";
-import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/core/client";
 
 export type Booking = {
   _id?: string;
@@ -131,7 +131,7 @@ export function BookingHandle({
     }
 
     try {
-      const usersRes = await fetch(`${API_URL}/users`);
+      const usersRes = await apiFetch(`/users`);
       if (usersRes.ok) {
         const users = await usersRes.json();
         if (Array.isArray(users)) {
@@ -176,7 +176,7 @@ export function BookingHandle({
     };
 
     try {
-      const response = await fetch(`${API_URL}/bookings`, {
+      const response = await apiFetch(`/bookings`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

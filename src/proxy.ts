@@ -24,7 +24,7 @@ export async function proxy(request: NextRequest) {
   )?.[1];
 
   if (allowedRoles && !allowedRoles.includes(String(session.user.role ?? ""))) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/unauthorized", request.url));
   }
 
   return NextResponse.next();

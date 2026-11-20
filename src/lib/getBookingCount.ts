@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
-import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/core/server";
 
 export default async function getBookingCount() {
   const session = await auth.api.getSession({
@@ -12,7 +12,7 @@ export default async function getBookingCount() {
     return 0;
   }
 
-  const res = await fetch(`${API_URL}/bookings`, { cache: "no-store" });
+  const res = await apiFetch(`/bookings`, { cache: "no-store" });
   if (!res.ok) {
     return 0;
   }

@@ -29,7 +29,7 @@ import { DeleteServiceButton } from "@/components/services/delete-service-button
 import { DeleteBookingButton } from "@/components/bookings/delete-booking-button";
 import { UpdateBookingStatusButton } from "@/components/bookings/update-booking-status-button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/core/client";
 
 interface Booking {
   _id?: string;
@@ -86,13 +86,13 @@ export default function EditUserPage({
 
   useEffect(() => {
     Promise.all([
-      fetch(`${API_URL}/users/${id}`).then((res) =>
+      apiFetch(`/users?id=${id}`).then((res) =>
         res.ok ? res.json() : null,
       ),
-      fetch(`${API_URL}/bookings`).then((res) =>
+      apiFetch(`/bookings`).then((res) =>
         res.ok ? res.json() : [],
       ),
-      fetch(`${API_URL}/services`).then((res) =>
+      apiFetch(`/services`).then((res) =>
         res.ok ? res.json() : [],
       ),
     ])
@@ -144,7 +144,7 @@ export default function EditUserPage({
     e.preventDefault();
 
     try {
-      const res = await fetch(`${API_URL}/users/${id}`, {
+      const res = await apiFetch(`/users?id=${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(user),
@@ -164,7 +164,7 @@ export default function EditUserPage({
     const isPremium = !user.isPremium;
 
     try {
-      const res = await fetch(`${API_URL}/users/${id}`, {
+      const res = await apiFetch(`/users?id=${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isPremium }),
@@ -185,7 +185,7 @@ export default function EditUserPage({
 
   async function handleDeleteUser() {
     try {
-      const res = await fetch(`${API_URL}/users/${id}`, {
+      const res = await apiFetch(`/users?id=${id}`, {
         method: "DELETE",
       });
 

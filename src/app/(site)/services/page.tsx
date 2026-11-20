@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { ServiceCard, type Service } from "@/components/services/service-card";
-import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/core/server";
 
 export const metadata: Metadata = {
   title: "Services | WedPlan",
@@ -9,14 +9,13 @@ export const metadata: Metadata = {
     "Explore venues, photographers, catering, and the people who make your day yours.",
 };
 
-const SERVICES_API = `${API_URL}/services`;
 
 export default async function ServicesPage() {
   let services: Service[] = [];
   let hasError = false;
 
   try {
-    const response = await fetch(SERVICES_API);
+    const response = await apiFetch("/services");
 
     if (!response.ok) throw new Error("Request failed");
 

@@ -4,14 +4,14 @@ import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/core/client";
 
 export function DeleteBookmarkButton({ id }: { id: string }) {
   const router = useRouter();
 
   async function handleDelete() {
     try {
-      const res = await fetch(`${API_URL}/bookmarks/${id}`, {
+      const res = await apiFetch(`/bookmarks?id=${id}`, {
         method: "DELETE",
       });
 

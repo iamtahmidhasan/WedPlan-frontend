@@ -7,7 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/core/client";
 
 export default function EditServicePage({
   params,
@@ -27,7 +27,7 @@ export default function EditServicePage({
   });
 
   useEffect(() => {
-    fetch(`${API_URL}/services/${id}`)
+    apiFetch(`/services?id=${id}`)
       .then((res) => res.json())
       .then((data) => {
         if (data) {
@@ -60,7 +60,7 @@ export default function EditServicePage({
     };
 
     try {
-      const res = await fetch(`${API_URL}/services/${id}`, {
+      const res = await apiFetch(`/services?id=${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -78,7 +78,7 @@ export default function EditServicePage({
 
   async function handleDelete() {
     try {
-      const res = await fetch(`${API_URL}/services/${id}`, {
+      const res = await apiFetch(`/services?id=${id}`, {
         method: "DELETE",
       });
 

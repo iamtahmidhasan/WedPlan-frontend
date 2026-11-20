@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { type Service } from "@/components/services/service-card";
-import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/core/client";
 
 export interface UserSummary {
   _id?: string;
@@ -83,7 +83,7 @@ export function EditBookingForm({
     };
 
     try {
-      const res = await fetch(`${API_URL}/bookings/${booking.id}`, {
+      const res = await apiFetch(`/bookings?id=${booking.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -106,7 +106,7 @@ export function EditBookingForm({
     setIsDeleting(true);
 
     try {
-      const res = await fetch(`${API_URL}/bookings/${booking.id}`, {
+      const res = await apiFetch(`/bookings?id=${booking.id}`, {
         method: "DELETE",
       });
 

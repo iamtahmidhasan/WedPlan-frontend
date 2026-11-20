@@ -6,7 +6,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/core/server";
 import { cn } from "@/lib/utils";
 
 type Transaction = {
@@ -30,8 +30,8 @@ type UserSummary = {
 
 export default async function DashboardTransactionsPage() {
   const [transactionsRes, usersRes] = await Promise.all([
-    fetch(`${API_URL}/transactions`, { cache: "no-store" }).catch(() => null),
-    fetch(`${API_URL}/users`, { cache: "no-store" }).catch(() => null),
+    apiFetch(`/transactions`, { cache: "no-store" }).catch(() => null),
+    apiFetch(`/users`, { cache: "no-store" }).catch(() => null),
   ]);
 
   const transactions: Transaction[] = transactionsRes?.ok

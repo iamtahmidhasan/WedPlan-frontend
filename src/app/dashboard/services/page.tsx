@@ -13,7 +13,7 @@ import {
 import { formatPrice, type Service } from "@/components/services/service-card";
 import { DeleteServiceButton } from "@/components/services/delete-service-button";
 import { ClickableTableRow } from "@/components/dashboard/clickable-table-row";
-import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/core/server";
 import { auth } from "@/lib/auth";
 import { getPremiumById } from "@/lib/actions/getPremiumById";
 
@@ -35,8 +35,8 @@ export default async function DashboardServicesPage() {
 
   try {
     const [servicesRes, usersRes] = await Promise.all([
-      fetch(`${API_URL}/services`, { cache: "no-store" }),
-      fetch(`${API_URL}/users`, { cache: "no-store" }).catch(() => null),
+      apiFetch(`/services`, { cache: "no-store" }),
+      apiFetch(`/users`, { cache: "no-store" }).catch(() => null),
     ]);
 
     if (servicesRes.ok && sessionUser?.role !== "customer") {

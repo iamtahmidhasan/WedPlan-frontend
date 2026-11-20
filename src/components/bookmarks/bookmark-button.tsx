@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
-import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/core/client";
 
 interface BookmarkItem {
   _id?: string;
@@ -51,7 +51,7 @@ export function BookmarkButton({
   useEffect(() => {
     if (!session?.user) return;
 
-    fetch(`${API_URL}/bookmarks`)
+    apiFetch(`/bookmarks`)
       .then((res) => (res.ok ? res.json() : []))
       .then((list: BookmarkItem[]) => {
         if (Array.isArray(list)) {
@@ -92,7 +92,7 @@ export function BookmarkButton({
     }
 
     try {
-      const userRes = await fetch(`${API_URL}/users`);
+      const userRes = await apiFetch(`/users`);
       if (userRes.ok) {
         const users = await userRes.json();
         if (Array.isArray(users)) {
@@ -130,7 +130,7 @@ export function BookmarkButton({
     if (isBookmarked && bookmarkId) {
       // Remove bookmark
       try {
-        const res = await fetch(`${API_URL}/bookmarks/${bookmarkId}`, {
+        const res = await apiFetch(`/bookmarks?id=${bookmarkId}`, {
           method: "DELETE",
         });
 
@@ -163,7 +163,7 @@ export function BookmarkButton({
     };
 
     try {
-      const res = await fetch(`${API_URL}/bookmarks`, {
+      const res = await apiFetch(`/bookmarks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

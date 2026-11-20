@@ -27,7 +27,7 @@ import { DeleteServiceButton } from "@/components/services/delete-service-button
 import { DeleteBookingButton } from "@/components/bookings/delete-booking-button";
 import { UpdateBookingStatusButton } from "@/components/bookings/update-booking-status-button";
 import { ClickableTableRow } from "@/components/dashboard/clickable-table-row";
-import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/core/server";
 import { auth } from "@/lib/auth";
 
 interface Booking {
@@ -90,9 +90,9 @@ export default async function ProfilePage({
   const { tab } = await searchParams;
 
   const [usersRes, bookingsRes, servicesRes] = await Promise.all([
-    fetch(`${API_URL}/users`, { cache: "no-store" }),
-    fetch(`${API_URL}/bookings`, { cache: "no-store" }),
-    fetch(`${API_URL}/services`, { cache: "no-store" }),
+    apiFetch(`/users`, { cache: "no-store" }),
+    apiFetch(`/bookings`, { cache: "no-store" }),
+    apiFetch(`/services`, { cache: "no-store" }),
   ]);
 
   const allUsers: DBUser[] = usersRes.ok ? await usersRes.json() : [];
@@ -137,7 +137,7 @@ export default async function ProfilePage({
     const name = String(formData.get("name") ?? "").trim();
     const image = String(formData.get("image") ?? "").trim();
 
-    await fetch(`${API_URL}/users/${userId}`, {
+    await apiFetch(`/users?id=${userId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, image }),
@@ -151,7 +151,7 @@ export default async function ProfilePage({
     const businessName = String(formData.get("businessName") ?? "").trim();
     const role = String(formData.get("role") ?? "customer").trim();
 
-    await fetch(`${API_URL}/users/${userId}`, {
+    await apiFetch(`/users?id=${userId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ businessName, role }),

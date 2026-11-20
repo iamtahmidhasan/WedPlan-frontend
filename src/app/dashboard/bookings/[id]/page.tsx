@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { ArrowLeft } from "lucide-react";
 import { type Service } from "@/components/services/service-card";
-import { API_URL } from "@/lib/config";
+import { apiFetch } from "@/lib/core/server";
 import { auth } from "@/lib/auth";
 import {
   EditBookingForm,
@@ -12,9 +12,9 @@ import {
 
 async function getBookingPageData(id: string) {
   const [bookingRes, servicesRes, usersRes] = await Promise.all([
-    fetch(`${API_URL}/bookings/${id}`, { cache: "no-store" }),
-    fetch(`${API_URL}/services`, { cache: "no-store" }),
-    fetch(`${API_URL}/users`, { cache: "no-store" }),
+    apiFetch(`/bookings?id=${id}`, { cache: "no-store" }),
+    apiFetch(`/services`, { cache: "no-store" }),
+    apiFetch(`/users`, { cache: "no-store" }),
   ]);
 
   if (!bookingRes.ok) {
