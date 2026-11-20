@@ -1,6 +1,5 @@
 import { betterAuth } from "better-auth";
 import { MongoClient } from "mongodb";
-import {admin} from "better-auth/plugins";
 import { mongodbAdapter } from "@better-auth/mongo-adapter";
 
 const client = new MongoClient(process.env.DATABASE_URL!);
@@ -13,18 +12,21 @@ export const auth = betterAuth({
   user: {
     additionalFields: {
       role: {
-        type: ["vendor", "customer", "admin"],
+        type: "string",
         input: true,
         defaultValue: "customer",
+        transform: {
+          input: (value) => (value === "vendor" ? "vendor" : "customer"),
+        },
       },
       isBlocked: {
         type: "boolean",
-        input: true,
+        input: false,
         defaultValue: false,
       },
       isPremium: {
         type: "boolean",
-        input: true,
+        input: false,
         defaultValue: false,
       },
       businessName: {
@@ -40,9 +42,6 @@ export const auth = betterAuth({
       clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
     },
   },
-  plugins:[
-    admin()
-  ],
   database: mongodbAdapter(db, {
     client,
   }),

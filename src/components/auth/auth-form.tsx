@@ -6,6 +6,7 @@ import { type FormEvent, useState } from "react";
 import { LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ImageUpload } from "@/components/ui/image-upload";
 import { signIn, signUp } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
@@ -43,7 +44,9 @@ const copy = {
 } as const;
 
 function getErrorMessage(error: { message?: string } | null | undefined) {
-  return error?.message ?? "We couldn’t complete that request. Please try again.";
+  return (
+    error?.message ?? "We couldn’t complete that request. Please try again."
+  );
 }
 
 const githubErrorTitle = "Couldn’t continue with GitHub";
@@ -53,7 +56,7 @@ export function AuthForm({ mode }: AuthFormProps) {
   const content = copy[mode];
   const isSignUp = mode === "sign-up";
   const [name, setName] = useState("");
-  const [role, setRole] = useState<"vendor" | "customer" | "admin">("customer");
+  const [role, setRole] = useState<"customer" | "vendor">("customer");
   const [businessName, setBusinessName] = useState("");
   const [image, setImage] = useState("");
   const [email, setEmail] = useState("");
@@ -68,23 +71,24 @@ export function AuthForm({ mode }: AuthFormProps) {
     setIsSubmitting(true);
 
     const result = isSignUp
-      ? await (signUp.email as (data: {
-          name: string;
-          email: string;
-          password: string;
-          role?: string;
-          image?: string;
-          businessName?: string;
-          isBlocked?: boolean;
-          callbackURL?: string;
-        }) => Promise<{ error?: { message?: string } }>)({
+      ? await (
+          signUp.email as (data: {
+            name: string;
+            email: string;
+            password: string;
+            role: "customer" | "vendor";
+            businessName?: string;
+            image?: string;
+            callbackURL?: string;
+          }) => Promise<{ error?: { message?: string } }>
+        )({
           name,
           email,
           password,
           role,
+          businessName:
+            role === "vendor" ? businessName.trim() || undefined : undefined,
           image: image.trim() || undefined,
-          businessName: role === "vendor" ? businessName.trim() || undefined : undefined,
-          isBlocked: false,
           callbackURL: "/",
         })
       : await signIn.email({
@@ -127,7 +131,9 @@ export function AuthForm({ mode }: AuthFormProps) {
   return (
     <div className="w-full max-w-md">
       <div className="mb-8">
-        <p className="mb-3 text-sm text-muted-foreground">Your plans, together.</p>
+        <p className="mb-3 text-sm text-muted-foreground">
+          Your plans, together.
+        </p>
         <h1 className="max-w-[14ch] text-5xl leading-[0.98] tracking-[-0.03em] text-foreground sm:text-6xl">
           {content.title}
         </h1>
@@ -164,7 +170,10 @@ export function AuthForm({ mode }: AuthFormProps) {
         {isSignUp && (
           <>
             <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium text-foreground">
+              <label
+                htmlFor="name"
+                className="text-sm font-medium text-foreground"
+              >
                 Your name
               </label>
               <input
@@ -183,10 +192,10 @@ export function AuthForm({ mode }: AuthFormProps) {
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">
-                Role
+                I want to
               </label>
-              <div className="grid grid-cols-3 gap-2">
-                {(["vendor", "customer", "admin"] as const).map((r) => (
+              <div className="grid grid-cols-2 gap-2">
+                {(["customer", "vendor"] as const).map((r) => (
                   <button
                     key={r}
                     type="button"
@@ -195,10 +204,10 @@ export function AuthForm({ mode }: AuthFormProps) {
                       "h-11 rounded-md border text-sm font-medium capitalize transition-all",
                       role === r
                         ? "border-primary bg-primary text-primary-foreground shadow-xs"
-                        : "border-input bg-background text-muted-foreground hover:bg-secondary hover:text-foreground"
+                        : "border-input bg-background text-muted-foreground hover:bg-secondary hover:text-foreground",
                     )}
                   >
-                    {r}
+                    {r === "customer" ? "Plan my wedding" : "List my services"}
                   </button>
                 ))}
               </div>
@@ -206,7 +215,10 @@ export function AuthForm({ mode }: AuthFormProps) {
 
             {role === "vendor" && (
               <div className="space-y-2">
-                <label htmlFor="businessName" className="text-sm font-medium text-foreground">
+                <label
+                  htmlFor="businessName"
+                  className="text-sm font-medium text-foreground"
+                >
                   Business name
                 </label>
                 <input
@@ -223,25 +235,15 @@ export function AuthForm({ mode }: AuthFormProps) {
               </div>
             )}
 
-            <div className="space-y-2">
-              <label htmlFor="image" className="text-sm font-medium text-foreground">
-                Profile image link
-              </label>
-              <input
-                id="image"
-                name="image"
-                type="url"
-                value={image}
-                onChange={(event) => setImage(event.target.value)}
-                className="h-12 w-full rounded-md border border-input bg-background px-3 text-base outline-none transition-colors placeholder:text-muted-foreground hover:bg-secondary focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
-                placeholder="https://example.com/avatar.jpg"
-              />
-            </div>
+            <ImageUpload value={image} onChange={setImage} />
           </>
         )}
 
         <div className="space-y-2">
-          <label htmlFor="email" className="text-sm font-medium text-foreground">
+          <label
+            htmlFor="email"
+            className="text-sm font-medium text-foreground"
+          >
             Email address
           </label>
           <input
@@ -261,7 +263,10 @@ export function AuthForm({ mode }: AuthFormProps) {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-4">
-            <label htmlFor="password" className="text-sm font-medium text-foreground">
+            <label
+              htmlFor="password"
+              className="text-sm font-medium text-foreground"
+            >
               Password
             </label>
             {!isSignUp && (
@@ -301,7 +306,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           type="submit"
           className={cn(
             "h-12 w-full rounded-md text-sm active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55",
-            isSubmitting && "cursor-wait"
+            isSubmitting && "cursor-wait",
           )}
           disabled={isSubmitting || isSigningInWithGithub}
         >
