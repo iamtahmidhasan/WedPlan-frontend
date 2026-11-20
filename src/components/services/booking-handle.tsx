@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -10,7 +10,6 @@ import {
   Send,
   LoaderCircle,
   AlertCircle,
-  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -58,15 +57,12 @@ export function BookingHandle({
   price,
   initialBooked = false,
   isBlocked = false,
-  bookingCount = 0,
-  isPremium = false,
 }: BookingHandleProps) {
   const router = useRouter();
   const { data: session, isPending } = useSession();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [hasBooked, setHasBooked] = useState(initialBooked);
-  const [localBookingCount, setLocalBookingCount] = useState(bookingCount);
 
   const [eventDate, setEventDate] = useState("");
   const [eventLocation, setEventLocation] = useState(defaultLocation);
@@ -75,69 +71,13 @@ export function BookingHandle({
   const user = session?.user;
   const role = (user as { role?: string } | undefined)?.role ?? "customer";
   const customerId = user?.id ?? "";
+  const displayName = user?.name ? user.name : user?.email;
 
   const sessionBlocked = Boolean(
-    (user as { isBlocked?: boolean } | undefined)?.isBlocked
+    (user as { isBlocked?: boolean } | undefined)?.isBlocked,
   );
   const userIsBlocked = isBlocked ? true : sessionBlocked;
 
-  const sessionPremium = Boolean(
-    (user as { isPremium?: boolean } | undefined)?.isPremium
-  );
-  const userIsPremium = isPremium ? true : sessionPremium;
-
-  const currentCount = Math.max(bookingCount, localBookingCount);
-
-  // Check if session user already booked this service
-  useEffect(() => {
-    if (!session?.user?.id && !session?.user?.email) return;
-
-    fetch(`${API_URL}/bookings`)
-      .then((res) => (res.ok ? res.json() : []))
-      .then((bookings: Booking[]) => {
-        if (Array.isArray(bookings)) {
-          let count = 0;
-          const booked = bookings.some((b) => {
-            if (session.user.id) {
-              if (b.customerId === session.user.id) {
-                count += 1;
-              } else if ((b as { userId?: string }).userId === session.user.id) {
-                count += 1;
-              }
-            }
-
-            if (b.serviceId !== serviceId) return false;
-            if (b.status && b.status.toLowerCase() === "cancelled") return false;
-
-            if (session.user.id) {
-              if (b.customerId === session.user.id) return true;
-              if ((b as { userId?: string }).userId === session.user.id) return true;
-            }
-
-            if (session.user.email) {
-              const userEmail = session.user.email.toLowerCase();
-              const custEmail = (
-                b as { customerEmail?: string }
-              ).customerEmail?.toLowerCase();
-              const uEmail = (
-                b as { userEmail?: string }
-              ).userEmail?.toLowerCase();
-              if (custEmail === userEmail) return true;
-              if (uEmail === userEmail) return true;
-            }
-
-            return false;
-          });
-          setHasBooked(booked);
-          if (count > 0) {
-            setLocalBookingCount(count);
-          }
-        }
-      })
-      .catch((err) => console.error("Error checking booking status:", err));
-  }, [serviceId, session?.user]);
-
-  // If user is blocked, render disabled button
   if (userIsBlocked) {
     return (
       <button
@@ -152,12 +92,10 @@ export function BookingHandle({
     );
   }
 
-  // If user role is vendor, remove booking button
   if (role === "vendor") {
     return null;
   }
 
-  // If already booked, render disabled button
   if (hasBooked) {
     return (
       <button
@@ -172,22 +110,7 @@ export function BookingHandle({
     );
   }
 
-  // Customer role check
   const isCustomer = role === "customer";
-  const requiresPremium = isCustomer && !userIsPremium && currentCount >= 3;
-
-  // If customer already booked 3 services and is not premium, 4th booking redirects to /premium
-  if (requiresPremium) {
-    return (
-      <Link
-        href="/premium"
-        className="inline-flex h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-8 text-base font-medium text-white shadow-xs transition-opacity hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <Sparkles className="size-4" />
-        <span>Book Service (Upgrade to Premium)</span>
-      </Link>
-    );
-  }
 
   async function handleBookingSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -199,14 +122,6 @@ export function BookingHandle({
 
     if (userIsBlocked) {
       toast.error("Your account has been blocked. You cannot book services.");
-      return;
-    }
-
-    if (requiresPremium) {
-      toast.info(
-        "You have reached the 3 free bookings limit. Upgrade to Premium to book this service."
-      );
-      router.push("/premium");
       return;
     }
 
@@ -223,31 +138,29 @@ export function BookingHandle({
           let matched = null;
           if (customerId) {
             matched = users.find(
-              (u: { _id?: string; id?: string }) => u._id === customerId
+              (u: { _id?: string; id?: string }) => u._id === customerId,
             );
             if (!matched) {
               matched = users.find(
-                (u: { _id?: string; id?: string }) => u.id === customerId
+                (u: { _id?: string; id?: string }) => u.id === customerId,
               );
             }
           }
           if (!matched && user.email) {
             const email = user.email.toLowerCase();
             matched = users.find(
-              (u: { email?: string }) => u.email?.toLowerCase() === email
+              (u: { email?: string }) => u.email?.toLowerCase() === email,
             );
           }
           if (matched?.isBlocked) {
             toast.error(
-              "Your account has been blocked. You cannot book services."
+              "Your account has been blocked. You cannot book services.",
             );
             return;
           }
         }
       }
-    } catch {
-      // Continue if network check fails
-    }
+    } catch {}
 
     setLoading(true);
 
@@ -318,7 +231,6 @@ export function BookingHandle({
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Service Snapshot Card */}
           <div className="rounded-xl border border-border bg-secondary/30 p-4 space-y-2">
             {serviceName && (
               <h3 className="font-semibold text-sm text-foreground">
@@ -338,7 +250,6 @@ export function BookingHandle({
             </p>
           </div>
 
-          {/* Role & Auth Validations */}
           {isPending ? (
             <div className="flex h-32 items-center justify-center text-xs text-muted-foreground">
               <LoaderCircle className="size-4 animate-spin mr-2" />
@@ -378,26 +289,23 @@ export function BookingHandle({
               </p>
             </div>
           ) : (
-            /* Booking Form for Customer Role */
             <form
               id="booking-form"
               onSubmit={handleBookingSubmit}
               className="space-y-4"
             >
-              {/* Customer Account Info */}
               <div className="space-y-1">
                 <label className="text-xs font-medium text-foreground">
                   Your Account
                 </label>
                 <div className="rounded-md border border-input bg-muted/30 px-3 py-2 text-xs text-muted-foreground flex justify-between items-center">
-                  <span className="truncate">{user.name || user.email}</span>
+                  <span className="truncate">{displayName}</span>
                   <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary capitalize">
                     {role}
                   </span>
                 </div>
               </div>
 
-              {/* Event Date */}
               <div className="space-y-1">
                 <label
                   htmlFor="eventDate"
@@ -416,7 +324,6 @@ export function BookingHandle({
                 />
               </div>
 
-              {/* Event Location */}
               <div className="space-y-1">
                 <label
                   htmlFor="eventLocation"
@@ -438,7 +345,6 @@ export function BookingHandle({
                 </div>
               </div>
 
-              {/* Message */}
               <div className="space-y-1">
                 <label
                   htmlFor="message"
@@ -459,7 +365,6 @@ export function BookingHandle({
           )}
         </div>
 
-        {/* Footer Actions */}
         {user && isCustomer && (
           <div className="border-t border-border p-4 bg-card flex items-center justify-end gap-2">
             <Button

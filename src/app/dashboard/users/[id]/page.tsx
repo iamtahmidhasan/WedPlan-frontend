@@ -71,6 +71,7 @@ export default function EditUserPage({
     businessName: "",
     isBlocked: false,
     emailVerified: false,
+    isPremium: false,
   });
 
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -105,6 +106,7 @@ export default function EditUserPage({
             businessName: userData.businessName || "",
             isBlocked: Boolean(userData.isBlocked),
             emailVerified: Boolean(userData.emailVerified),
+            isPremium: Boolean(userData.isPremium),
           });
         }
 
@@ -158,6 +160,29 @@ export default function EditUserPage({
     }
   }
 
+  async function handleTogglePremium() {
+    const isPremium = !user.isPremium;
+
+    try {
+      const res = await fetch(`${API_URL}/users/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPremium }),
+      });
+
+      if (!res.ok) throw new Error("Failed to update premium status");
+
+      setUser({ ...user, isPremium });
+      toast.success(
+        isPremium ? "User upgraded to Premium" : "Premium access removed",
+      );
+      router.refresh();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update premium status");
+    }
+  }
+
   async function handleDeleteUser() {
     try {
       const res = await fetch(`${API_URL}/users/${id}`, {
@@ -199,6 +224,16 @@ export default function EditUserPage({
             <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold capitalize text-primary">
               {user.role}
             </span>
+            <Button
+              type="button"
+              size="sm"
+              variant={user.isPremium ? "default" : "outline"}
+              onClick={handleTogglePremium}
+              className="gap-1.5"
+            >
+              <Sparkles className="size-3.5" />
+              {user.isPremium ? "Premium" : "Make Premium"}
+            </Button>
           </div>
         </div>
       </div>

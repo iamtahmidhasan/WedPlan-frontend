@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Store,
   HeartHandshake,
+  CircleDollarSign,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -57,6 +58,12 @@ export const menuItemByRole = {
       name: "Services",
       href: "/dashboard/services",
       icon: Sparkles,
+      exact: false,
+    },
+    {
+      name: "Transactions",
+      href: "/dashboard/transactions",
+      icon: CircleDollarSign,
       exact: false,
     },
   ],
@@ -265,7 +272,7 @@ export function DashboardSidebar() {
   const { data: session } = useSession();
 
   const isBlocked = Boolean(
-    (session?.user as { isBlocked?: boolean } | undefined)?.isBlocked
+    (session?.user as { isBlocked?: boolean } | undefined)?.isBlocked,
   );
   if (isBlocked) {
     return null;

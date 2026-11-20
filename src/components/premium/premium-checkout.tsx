@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Check, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import PaymentButton from "../PaymentButton";
 
 const PREMIUM_BENEFITS = [
   "Unlimited wedding service bookings (no 3-booking cap)",
@@ -10,7 +11,17 @@ const PREMIUM_BENEFITS = [
   "Dedicated support for wedding reservations",
 ];
 
-export function PremiumCheckout() {
+const VENDOR_PREMIUM_BENEFITS = [
+  "Publish unlimited services (no 3-service cap)",
+  "Keep your full vendor storefront live in the catalog",
+  "Lifetime access with a single one-time payment",
+  "No recurring monthly subscriptions or hidden charges",
+  "Dedicated support for vendor accounts",
+];
+
+export function PremiumCheckout({ isVendor = false }: { isVendor?: boolean }) {
+  const benefits = isVendor ? VENDOR_PREMIUM_BENEFITS : PREMIUM_BENEFITS;
+
   return (
     <div className="w-full max-w-md">
       <div className="mb-6">
@@ -19,10 +30,12 @@ export function PremiumCheckout() {
           One-Time Upgrade
         </span>
         <h1 className="mt-4 font-heading text-4xl leading-[1.05] tracking-tight text-foreground sm:text-5xl">
-          Unlock Unlimited Bookings
+          {isVendor ? "Unlock Unlimited Services" : "Unlock Unlimited Bookings"}
         </h1>
         <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-          Customers can book 3 services for free. Upgrade to Premium with a single one-time payment of $20 to book unlimited wedding services.
+          {isVendor
+            ? "Vendors can publish 3 services for free. Upgrade to Premium with a single one-time payment of $20 to publish unlimited wedding services."
+            : "Customers can book 3 services for free. Upgrade to Premium with a single one-time payment of $20 to book unlimited wedding services."}
         </p>
       </div>
 
@@ -37,7 +50,9 @@ export function PremiumCheckout() {
               <span className="font-heading text-4xl font-bold text-foreground sm:text-5xl">
                 $20
               </span>
-              <span className="text-xs text-muted-foreground">USD / one-time</span>
+              <span className="text-xs text-muted-foreground">
+                USD / one-time
+              </span>
             </div>
           </div>
           <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
@@ -46,7 +61,7 @@ export function PremiumCheckout() {
         </div>
 
         <ul className="mt-5 space-y-3">
-          {PREMIUM_BENEFITS.map((benefit) => (
+          {benefits.map((benefit) => (
             <li
               key={benefit}
               className="flex items-start gap-2.5 text-xs text-muted-foreground"
@@ -60,14 +75,7 @@ export function PremiumCheckout() {
 
       {/* Payment Action */}
       <div className="mt-6 space-y-3">
-        <Button
-          type="button"
-          size="lg"
-          className="h-12 w-full text-base font-semibold shadow-xs"
-        >
-          <Sparkles className="size-4" />
-          <span>Pay $20 (One-Time Payment)</span>
-        </Button>
+        <PaymentButton />
 
         <p className="text-center text-xs text-muted-foreground">
           Secure payment • Instant activation • No recurring fees

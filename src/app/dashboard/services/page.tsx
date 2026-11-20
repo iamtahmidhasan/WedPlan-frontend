@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { headers } from "next/headers";
-import { Plus, Store } from "lucide-react";
+import { Plus, Sparkles, Store } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -15,6 +15,7 @@ import { DeleteServiceButton } from "@/components/services/delete-service-button
 import { ClickableTableRow } from "@/components/dashboard/clickable-table-row";
 import { API_URL } from "@/lib/config";
 import { auth } from "@/lib/auth";
+import { getPremiumById } from "@/lib/actions/getPremiumById";
 
 interface UserSummary {
   _id?: string;
@@ -58,6 +59,12 @@ export default async function DashboardServicesPage() {
     ? services.filter((service) => service.vendorId === sessionUser?.id)
     : services;
 
+  const vendorPremium = isVendor
+    ? await getPremiumById({ userId: sessionUser?.id ?? "" }).catch(() => null)
+    : null;
+  const atServiceLimit =
+    isVendor && visibleServices.length >= 3 && !vendorPremium?.isPremium;
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -72,11 +79,15 @@ export default async function DashboardServicesPage() {
           </p>
         </div>
         <Link
-          href="/dashboard/services/add"
+          href={atServiceLimit ? "/premium" : "/dashboard/services/add"}
           className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 w-fit"
         >
-          <Plus className="size-3.5" />
-          <span>Add Service</span>
+          {atServiceLimit ? (
+            <Sparkles className="size-3.5" />
+          ) : (
+            <Plus className="size-3.5" />
+          )}
+          <span>{atServiceLimit ? "Upgrade to Premium" : "Add Service"}</span>
         </Link>
       </div>
 

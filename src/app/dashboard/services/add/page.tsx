@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
 import { API_URL } from "@/lib/config";
 import { checkIsUserBlocked } from "@/lib/user-status";
+import { getPremiumById } from "@/lib/actions/getPremiumById";
 
 export default async function AddServicePage() {
   const session = await auth.api.getSession({
@@ -26,6 +27,23 @@ export default async function AddServicePage() {
     }
 
     const currentUserId = currentSession?.user?.id ?? user?.id ?? "vendor";
+
+    if (currentSession?.user?.role === "vendor") {
+      const servicesRes = await fetch(`${API_URL}/services`, {
+        cache: "no-store",
+      });
+      const services: { vendorId: string }[] = servicesRes.ok
+        ? await servicesRes.json()
+        : [];
+      const count = services.filter(
+        (service) => service.vendorId === currentUserId,
+      ).length;
+      const premium = await getPremiumById({
+        userId: currentUserId,
+      }).catch(() => null);
+
+      if (count >= 3 && !premium?.isPremium) redirect("/premium");
+    }
 
     const payload = {
       serviceName: formData.get("serviceName"),

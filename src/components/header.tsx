@@ -72,7 +72,13 @@ function AccountMenu({
         )}
         aria-label={`Open account menu for ${displayName}`}
       >
-        <Avatar>
+        <Avatar
+          className={
+            (user as { isPremium?: boolean }).isPremium
+              ? "ring-2 ring-amber-400"
+              : undefined
+          }
+        >
           {user.image && (
             <AvatarImage src={user.image} alt="" referrerPolicy="no-referrer" />
           )}
