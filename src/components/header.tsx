@@ -23,6 +23,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { NavigationContent } from "@/components/dashboard/dashboard-sidebar";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { signOut, useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
@@ -308,6 +309,8 @@ export function Header({ mode = "solid" }: { mode?: HeaderMode }) {
           <DesktopNavigation pathname={pathname} />
 
           <div className="flex items-center gap-2 lg:justify-self-end">
+            <ThemeToggle isTransparent={isTransparent} />
+
             {isPending ? (
               <LoadingAccount isTransparent={isTransparent} />
             ) : user ? (

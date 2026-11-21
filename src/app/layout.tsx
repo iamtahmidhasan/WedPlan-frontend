@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, DM_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 
 const dmSans = DM_Sans({
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={cn(
         "h-full",
         "antialiased",
@@ -37,9 +39,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         "font-sans"
       )}
     >
-      <body className="min-h-full flex flex-col">
-        {children}
-        <Toaster position="bottom-right" closeButton />
+      <body className="min-h-full flex flex-col bg-background text-foreground">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <Toaster position="bottom-right" closeButton />
+        </ThemeProvider>
       </body>
     </html>
   );
