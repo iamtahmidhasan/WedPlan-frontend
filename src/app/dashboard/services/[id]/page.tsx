@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { apiFetch } from "@/lib/core/client";
+import { MultiImageUpload } from "@/components/ui/multi-image-upload";
 
 export default function EditServicePage({
   params,
@@ -17,13 +18,15 @@ export default function EditServicePage({
   const { id } = use(params);
   const router = useRouter();
 
+  const [categories, setCategories] = useState<{ _id: string; name: string }[]>([]);
   const [service, setService] = useState({
     serviceName: "",
     category: "",
+    categoryId: "",
     price: 0,
     location: "",
     description: "",
-    image: "",
+    images: [] as string[],
   });
 
   useEffect(() => {
@@ -34,17 +37,26 @@ export default function EditServicePage({
           setService({
             serviceName: data.serviceName || "",
             category: data.category || "",
+            categoryId: data.categoryId || "",
             price: Number(data.price) || 0,
             location: data.location || "",
             description: data.description || "",
-            image:
-              Array.isArray(data.images) && data.images[0]
-                ? data.images[0]
-                : "",
+            images: Array.isArray(data.images)
+              ? data.images
+              : data.image
+                ? [data.image]
+                : [],
           });
         }
       })
       .catch((err) => console.error("Error fetching service:", err));
+
+    apiFetch("/categories")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) setCategories(data);
+      })
+      .catch((err) => console.error("Error fetching categories:", err));
   }, [id]);
 
   async function handleSubmit(e: FormEvent) {
@@ -53,10 +65,11 @@ export default function EditServicePage({
     const payload = {
       serviceName: service.serviceName.trim(),
       category: service.category.trim(),
+      categoryId: service.categoryId,
       price: Number(service.price),
       location: service.location.trim(),
       description: service.description.trim(),
-      ...(service.image ? { images: [service.image.trim()] } : {}),
+      images: service.images,
     };
 
     try {
@@ -133,19 +146,32 @@ export default function EditServicePage({
           {/* Category */}
           <div className="space-y-1">
             <label htmlFor="category" className="text-sm font-medium">
-              Category
+              Category <span className="text-destructive">*</span>
             </label>
-            <input
+            <select
               id="category"
-              type="text"
               required
               value={service.category}
-              onChange={(e) =>
-                setService({ ...service, category: e.target.value })
-              }
-              placeholder="e.g. Venue, Florist, Photography"
+              onChange={(e) => {
+                const selectedCat = categories.find((c) => c.name === e.target.value);
+                setService({
+                  ...service,
+                  category: e.target.value,
+                  categoryId: selectedCat?._id || service.categoryId,
+                });
+              }}
               className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring"
-            />
+            >
+              <option value="" disabled>Select a wedding category</option>
+              {categories.map((cat) => (
+                <option key={cat._id} value={cat.name}>
+                  {cat.name}
+                </option>
+              ))}
+              {service.category && !categories.some((c) => c.name === service.category) && (
+                <option value={service.category}>{service.category}</option>
+              )}
+            </select>
           </div>
 
           {/* Price */}
@@ -183,20 +209,14 @@ export default function EditServicePage({
             />
           </div>
 
-          {/* Cover Image URL */}
+          {/* Cover & Gallery Images */}
           <div className="space-y-1 sm:col-span-2">
-            <label htmlFor="image" className="text-sm font-medium">
-              Cover Image URL
-            </label>
-            <input
-              id="image"
-              type="url"
-              value={service.image}
-              onChange={(e) =>
-                setService({ ...service, image: e.target.value })
+            <MultiImageUpload
+              values={service.images}
+              onChange={(urls) =>
+                setService({ ...service, images: urls })
               }
-              placeholder="https://images.unsplash.com/..."
-              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+              label="Service Images (First image is primary Cover)"
             />
           </div>
 

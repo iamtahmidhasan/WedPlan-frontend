@@ -15,6 +15,7 @@ import {
   HeartHandshake,
   CircleDollarSign,
   PlusCircle,
+  Tags,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -109,6 +110,12 @@ export const getNavigationItemsForRole = (role?: string) => {
       name: "Manage Services",
       href: "/dashboard/services",
       icon: Sparkles,
+      exact: false,
+    },
+    {
+      name: "Manage Categories",
+      href: "/dashboard/categories",
+      icon: Tags,
       exact: false,
     },
     {

@@ -44,13 +44,15 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
 
   let services: Service[] = [];
   let availableLocations: string[] = [];
+  let availableCategories: string[] = [];
   let users: UserSummary[] = [];
   let hasError = false;
 
   try {
-    const [servicesRes, allServicesRes, usersRes] = await Promise.all([
+    const [servicesRes, allServicesRes, categoriesRes, usersRes] = await Promise.all([
       apiFetch(endpoint, { cache: "no-store" }),
       apiFetch("/services", { cache: "no-store" }).catch(() => null),
+      apiFetch("/categories", { cache: "no-store" }).catch(() => null),
       apiFetch("/users", { cache: "no-store" }).catch(() => null),
     ]);
 
@@ -62,13 +64,16 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
 
     if (allServicesRes && allServicesRes.ok) {
       const allServices = (await allServicesRes.json()) as Service[];
-      const locSet = new Set<string>();
-      for (const s of allServices) {
-        if (s.location && s.location.trim()) {
-          locSet.add(s.location.trim());
-        }
+      const activeServices = allServices.filter((s) => !s.status || s.status === "approved");
+      availableLocations = [...new Set(activeServices.map((s) => s.location?.trim()).filter(Boolean))].sort() as string[];
+      availableCategories = [...new Set(activeServices.map((s) => s.category?.trim()).filter(Boolean))].sort() as string[];
+    }
+
+    if (categoriesRes && categoriesRes.ok) {
+      const categoryDocs = (await categoriesRes.json()) as { name: string }[];
+      if (Array.isArray(categoryDocs) && categoryDocs.length > 0) {
+        availableCategories = categoryDocs.map((c) => c.name).filter(Boolean);
       }
-      availableLocations = Array.from(locSet).sort();
     }
 
     if (usersRes && usersRes.ok) {
@@ -175,6 +180,7 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
           <BrowseServicesCatalog
             services={services}
             availableLocations={availableLocations}
+            availableCategories={availableCategories}
             users={users}
             currentSearch={search}
             currentCategory={category}

@@ -27,6 +27,7 @@ interface UserSummary {
 interface BrowseServicesCatalogProps {
   services: Service[];
   availableLocations?: string[];
+  availableCategories?: string[];
   users?: UserSummary[];
   currentSearch?: string;
   currentCategory?: string;
@@ -37,6 +38,7 @@ interface BrowseServicesCatalogProps {
 export function BrowseServicesCatalog({
   services,
   availableLocations = [],
+  availableCategories = [],
   users = [],
   currentSearch = "",
   currentCategory = "all",
@@ -225,7 +227,7 @@ export function BrowseServicesCatalog({
             >
               All Categories
             </button>
-            {WEDDING_CATEGORIES.map((cat) => {
+            {(availableCategories.length > 0 ? availableCategories : WEDDING_CATEGORIES).map((cat) => {
               const isActive =
                 currentCategory.toLowerCase() === cat.toLowerCase() ||
                 (currentCategory !== "all" && cat.toLowerCase().includes(currentCategory.toLowerCase()));

@@ -7,12 +7,16 @@ import { auth } from "@/lib/auth";
 import { apiFetch } from "@/lib/core/server";
 import { checkIsUserBlocked } from "@/lib/user-status";
 import { getPremiumById } from "@/lib/actions/getPremiumById";
+import { ServiceImageUpload } from "@/components/services/service-image-upload";
 
 export default async function AddServicePage() {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
   const user = session?.user;
+
+  const categoriesRes = await apiFetch("/categories", { cache: "no-store" }).catch(() => null);
+  const categories: { _id: string; name: string }[] = categoriesRes?.ok ? await categoriesRes.json() : [];
 
   async function createService(formData: FormData) {
     "use server";
@@ -45,13 +49,27 @@ export default async function AddServicePage() {
       if (count >= 3 && !premium?.isPremium) redirect("/premium");
     }
 
+    const selection = (formData.get("categorySelection") as string) || "";
+    const [categoryId, categoryName] = selection.includes(":::")
+      ? selection.split(":::")
+      : ["", selection];
+
+    const rawImagesJson = (formData.get("imagesJson") as string) || "";
+    let images: string[] = [];
+    try {
+      if (rawImagesJson) images = JSON.parse(rawImagesJson);
+    } catch {
+      images = [];
+    }
+
     const payload = {
       serviceName: formData.get("serviceName"),
-      category: formData.get("category"),
+      category: categoryName,
+      categoryId: categoryId,
       price: Number(formData.get("price")) || 0,
       location: formData.get("location"),
       description: formData.get("description"),
-      images: formData.get("image") ? [formData.get("image")] : [],
+      images,
       vendorId: currentUserId,
       createdAt: new Date().toISOString(),
     };
@@ -110,17 +128,23 @@ export default async function AddServicePage() {
 
           {/* Category */}
           <div className="space-y-1">
-            <label htmlFor="category" className="text-sm font-medium">
-              Category
+            <label htmlFor="categorySelection" className="text-sm font-medium">
+              Category <span className="text-destructive">*</span>
             </label>
-            <input
-              id="category"
-              name="category"
-              type="text"
+            <select
+              id="categorySelection"
+              name="categorySelection"
               required
-              placeholder="e.g. Venue, Photography, Florist"
+              defaultValue=""
               className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring"
-            />
+            >
+              <option value="" disabled>Select a wedding category</option>
+              {categories.map((cat) => (
+                <option key={cat._id} value={`${cat._id}:::${cat.name}`}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Price */}
@@ -154,19 +178,8 @@ export default async function AddServicePage() {
             />
           </div>
 
-          {/* Cover Image URL */}
-          <div className="space-y-1 sm:col-span-2">
-            <label htmlFor="image" className="text-sm font-medium">
-              Cover Image URL
-            </label>
-            <input
-              id="image"
-              name="image"
-              type="url"
-              placeholder="https://images.unsplash.com/photo-..."
-              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring"
-            />
-          </div>
+          {/* Cover Image */}
+          <ServiceImageUpload />
 
           {/* Description */}
           <div className="space-y-1 sm:col-span-2">

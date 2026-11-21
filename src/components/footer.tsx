@@ -74,7 +74,7 @@ function LinkedinIcon({ className = "size-4" }: { className?: string }) {
   );
 }
 
-export function Footer() {
+export function Footer({ categories = [] }: { categories?: string[] }) {
   const currentYear = new Date().getFullYear();
 
   return (
@@ -199,60 +199,43 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Categories */}
+          {/* Dynamic Service Categories (Only existing categories) */}
           <div className="space-y-4">
             <p className="text-xs font-semibold uppercase tracking-wider text-foreground">
               Service Categories
             </p>
             <ul className="space-y-2.5 text-sm">
-              <li>
-                <Link
-                  href="/services?category=Photography"
-                  className="text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  Photography & Video
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/services?category=Venues"
-                  className="text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  Wedding Venues
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/services?category=Decoration"
-                  className="text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  Decoration & Florist
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/services?category=Catering"
-                  className="text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  Catering Services
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/services?category=Makeup"
-                  className="text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  Makeup & Styling
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/services?category=Fashion"
-                  className="text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  Wedding Fashion
-                </Link>
-              </li>
+              {categories.length > 0 ? (
+                categories.slice(0, 6).map((cat) => (
+                  <li key={cat}>
+                    <Link
+                      href={`/services?category=${encodeURIComponent(cat)}`}
+                      className="text-muted-foreground transition-colors hover:text-foreground capitalize"
+                    >
+                      {cat}
+                    </Link>
+                  </li>
+                ))
+              ) : (
+                <>
+                  <li>
+                    <Link
+                      href="/services"
+                      className="text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      All Wedding Services
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/vendors"
+                      className="text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      Verified Vendors
+                    </Link>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
 
