@@ -22,9 +22,9 @@ export function HeroSection() {
 
   return (
     <section className="border-b border-border bg-background">
-      <div className="grid lg:min-h-[calc(100svh-4rem)] lg:grid-cols-[minmax(18rem,0.85fr)_minmax(30rem,1.15fr)]">
+      <div className="grid lg:min-h-[calc(100svh)] lg:grid-cols-[minmax(18rem,0.85fr)_minmax(30rem,1.15fr)]">
         {/* Left Editorial Aside Banner with PixelBlast */}
-        <aside className="relative flex min-h-[calc(100svh-4rem)] flex-col justify-between overflow-hidden bg-primary px-6 py-10 text-primary-foreground sm:px-10 sm:py-12 lg:min-h-full lg:p-14">
+        <aside className="relative flex min-h-[calc(100svh)] flex-col justify-between overflow-hidden bg-primary px-6 py-10 text-primary-foreground sm:px-10 sm:py-12  lg:p-14">
           <PixelBlast
             className="absolute inset-0 size-full pointer-events-auto"
             color="rgba(255, 255, 255, 0.45)"
@@ -36,7 +36,7 @@ export function HeroSection() {
             showFloor={true}
           />
 
-          <div className="relative z-10 pointer-events-none">
+          <div className="relative z-10 pointer-events-none pt-12">
             <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-primary-foreground/75">
               <Sparkles className="size-3.5" />
               WedPlan Celebration Guide
@@ -51,8 +51,8 @@ export function HeroSection() {
               The good part starts right here.
             </p>
             <p className="mt-3 max-w-[36ch] text-xs leading-relaxed sm:text-sm text-primary-foreground/80">
-              A quieter, calmer way to connect with trusted venues, photographers,
-              florists, and catering artisans.
+              A quieter, calmer way to connect with trusted venues,
+              photographers, florists, and catering artisans.
             </p>
           </div>
 

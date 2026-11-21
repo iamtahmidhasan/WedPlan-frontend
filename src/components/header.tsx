@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, LogOut, Menu, X, User as UserIcon } from "lucide-react";
+import {
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  X,
+  User as UserIcon,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -82,9 +88,15 @@ function AccountMenu({
           )}
         >
           {user.image && (
-            <AvatarImage src={user.image} alt={displayName} referrerPolicy="no-referrer" />
+            <AvatarImage
+              src={user.image}
+              alt={displayName}
+              referrerPolicy="no-referrer"
+            />
           )}
-          <AvatarFallback className="text-xs font-semibold">{initials}</AvatarFallback>
+          <AvatarFallback className="text-xs font-semibold">
+            {initials}
+          </AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-60 p-2">
@@ -101,7 +113,9 @@ function AccountMenu({
               )}
             </div>
             {user.name && user.email && (
-              <span className="block truncate text-xs text-muted-foreground">{user.email}</span>
+              <span className="block truncate text-xs text-muted-foreground">
+                {user.email}
+              </span>
             )}
           </DropdownMenuLabel>
         </DropdownMenuGroup>
@@ -113,7 +127,10 @@ function AccountMenu({
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
-          <Link href="/dashboard/profile" className="flex w-full items-center gap-2.5">
+          <Link
+            href="/dashboard/profile"
+            className="flex w-full items-center gap-2.5"
+          >
             <UserIcon className="size-4 text-muted-foreground" />
             <span className="text-sm">Profile Settings</span>
           </Link>
@@ -125,7 +142,9 @@ function AccountMenu({
           className="flex w-full items-center gap-2.5 px-2 py-1.5 text-destructive focus:text-destructive cursor-pointer"
         >
           <LogOut className="size-4" aria-hidden="true" />
-          <span className="text-sm">{isSigningOut ? "Logging out…" : "Logout"}</span>
+          <span className="text-sm">
+            {isSigningOut ? "Logging out…" : "Logout"}
+          </span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -176,9 +195,7 @@ function DesktopNavigation({ pathname }: { pathname: string }) {
     <nav aria-label="Primary" className="hidden items-center gap-1 lg:flex">
       {navigation.map((item) => {
         const isActive =
-          item.href === "/"
-            ? pathname === "/"
-            : pathname.startsWith(item.href);
+          item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
 
         return (
           <Link
@@ -187,7 +204,7 @@ function DesktopNavigation({ pathname }: { pathname: string }) {
             className={cn(
               "rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring",
               isActive
-                ? "bg-secondary text-foreground font-semibold"
+                ? "text-foreground font-semibold"
                 : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
             )}
           >
@@ -397,7 +414,9 @@ export function Header({ mode = "solid" }: { mode?: HeaderMode }) {
                           <p className="truncate font-medium text-sm text-foreground">
                             {user.name || user.email}
                           </p>
-                          <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {user.email}
+                          </p>
                         </div>
                       </div>
                       <div className="grid gap-1 pt-1">
@@ -427,7 +446,9 @@ export function Header({ mode = "solid" }: { mode?: HeaderMode }) {
                           className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-destructive hover:bg-destructive/10 cursor-pointer"
                         >
                           <LogOut className="size-4" />
-                          <span>{isSigningOut ? "Logging out…" : "Logout"}</span>
+                          <span>
+                            {isSigningOut ? "Logging out…" : "Logout"}
+                          </span>
                         </button>
                       </div>
                     </div>

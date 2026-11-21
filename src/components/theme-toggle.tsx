@@ -18,7 +18,7 @@ export function ThemeToggle({
   const mounted = useSyncExternalStore(
     emptySubscribe,
     () => true,
-    () => false
+    () => false,
   );
 
   if (!mounted) {
@@ -26,7 +26,7 @@ export function ThemeToggle({
       <div
         className={cn(
           "size-9 rounded-md border border-transparent p-2",
-          className
+          className,
         )}
       />
     );
@@ -40,10 +40,9 @@ export function ThemeToggle({
       onClick={() => setTheme(isDark ? "light" : "dark")}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       className={cn(
-        "flex size-9 items-center justify-center rounded-md border border-border text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer",
-        isTransparent &&
-          "border-transparent text-white hover:bg-white/10 hover:text-white focus-visible:ring-white",
-        className
+        "flex size-9 items-center justify-center text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer",
+        isTransparent && "border-transparent",
+        className,
       )}
     >
       {isDark ? (
