@@ -92,8 +92,20 @@ export function BookingHandle({
     );
   }
 
+  if (role === "admin") {
+    return (
+      <div className="rounded-md border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
+        Admins cannot submit customer booking requests.
+      </div>
+    );
+  }
+
   if (role === "vendor") {
-    return null;
+    return (
+      <div className="rounded-md border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
+        Vendors cannot book services. Please sign in as a customer to submit booking requests.
+      </div>
+    );
   }
 
   if (hasBooked) {

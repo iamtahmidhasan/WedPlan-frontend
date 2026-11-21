@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, MapPin } from "lucide-react";
 import { connection } from "next/server";
 import { headers } from "next/headers";
@@ -35,6 +35,10 @@ export default async function ServiceDetailsPage({
       headers: await headers(),
     }),
   ]);
+
+  if (!session) {
+    redirect(`/sign-in?redirect=/services/${id}`);
+  }
 
   const [response, bookingsRes] = await Promise.all([
     apiFetch(`/services?id=${id}`),

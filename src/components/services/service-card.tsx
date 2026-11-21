@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin } from "lucide-react";
+import { MapPin, Store, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type Service = {
@@ -30,16 +30,17 @@ export function formatPrice(price: number) {
 type ServiceCardProps = {
   service: Service;
   featured?: boolean;
+  vendorName?: string;
 };
 
-export function ServiceCard({ service, featured = false }: ServiceCardProps) {
+export function ServiceCard({ service, featured = false, vendorName }: ServiceCardProps) {
   const image = service.images[0];
 
   return (
     <Link
       href={`/services/${service._id}`}
       className={cn(
-        "group flex h-full flex-col overflow-hidden border border-border bg-background outline-none transition-colors hover:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring",
+        "group flex h-full flex-col overflow-hidden border border-border bg-background outline-none transition-all hover:border-primary/50 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring",
         featured && "sm:col-span-2 xl:flex-row"
       )}
     >
@@ -66,6 +67,11 @@ export function ServiceCard({ service, featured = false }: ServiceCardProps) {
             Image coming soon
           </p>
         )}
+        <div className="absolute top-3 left-3">
+          <span className="inline-flex items-center rounded-md bg-background/90 backdrop-blur-xs px-2.5 py-1 text-xs font-medium text-foreground shadow-xs">
+            {service.category}
+          </span>
+        </div>
       </div>
 
       <div
@@ -74,47 +80,53 @@ export function ServiceCard({ service, featured = false }: ServiceCardProps) {
           featured && "xl:justify-center xl:p-10"
         )}
       >
-        <p
-          className={cn(
-            "text-xs uppercase tracking-[0.16em] text-primary",
-            featured && "text-sm"
-          )}
-        >
-          {service.category}
-        </p>
+        {/* Vendor Information */}
+        {vendorName && (
+          <div className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Store className="size-3.5 text-primary shrink-0" />
+            <span className="font-medium text-foreground">{vendorName}</span>
+          </div>
+        )}
+
         <h2
           className={cn(
-            "mt-3 font-heading leading-tight text-foreground transition-colors group-hover:text-primary",
-            featured ? "text-4xl sm:text-5xl" : "text-2xl"
+            "font-heading leading-tight text-foreground transition-colors group-hover:text-primary",
+            featured ? "text-4xl sm:text-5xl" : "text-xl font-bold"
           )}
         >
           {service.serviceName}
         </h2>
         <p
           className={cn(
-            "mt-3 flex-1 leading-6 text-muted-foreground",
+            "mt-2 flex-1 leading-6 text-muted-foreground line-clamp-2",
             featured ? "max-w-[48ch] text-base" : "text-sm"
           )}
         >
           {service.description}
         </p>
 
-        <div className="mt-6 flex flex-wrap items-end justify-between gap-3 border-t border-border pt-4">
+        {/* Location & Details row */}
+        <div className="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground">
+          <MapPin className="size-3.5 shrink-0 text-primary/80" aria-hidden="true" />
+          <span className="truncate">{service.location || "Location on inquiry"}</span>
+        </div>
+
+        {/* Footer with Price and View Details CTA */}
+        <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
           <div>
-            <p className="text-xs text-muted-foreground">Starting at</p>
+            <p className="text-[11px] text-muted-foreground">Starting at</p>
             <p
               className={cn(
-                "font-heading text-foreground",
-                featured ? "text-3xl" : "text-2xl"
+                "font-heading text-foreground font-semibold",
+                featured ? "text-3xl" : "text-xl"
               )}
             >
               {formatPrice(service.price)}
             </p>
           </div>
-          <p className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
-            <MapPin className="size-4 shrink-0" aria-hidden="true" />
-            <span>{service.location}</span>
-          </p>
+          <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-all group-hover:bg-primary group-hover:text-primary-foreground">
+            View Details <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+          </span>
         </div>
       </div>
     </Link>
