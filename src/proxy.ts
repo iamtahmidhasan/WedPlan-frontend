@@ -6,6 +6,7 @@ const roleRoutes: Record<string, string[]> = {
   "/dashboard/users": ["admin"],
   "/dashboard/services": ["admin", "vendor"],
   "/dashboard/transactions": ["admin"],
+  "/dashboard/bookmarks": ["customer"],
 };
 
 export async function proxy(request: NextRequest) {
@@ -16,7 +17,15 @@ export async function proxy(request: NextRequest) {
   });
 
   if (!session) {
-    return NextResponse.redirect(new URL("/sign-in", request.url));
+    const signInUrl = new URL("/sign-in", request.url);
+    if (pathname && pathname !== "/") {
+      signInUrl.searchParams.set("redirect", pathname);
+    }
+    return NextResponse.redirect(signInUrl);
+  }
+
+  if (session.user.isBlocked) {
+    return NextResponse.redirect(new URL("/unauthorized", request.url));
   }
 
   const allowedRoles = Object.entries(roleRoutes).find(([route]) =>

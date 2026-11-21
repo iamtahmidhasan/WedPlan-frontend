@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { AuthForm } from "@/components/auth/auth-form";
 import { AuthShell } from "@/components/auth/auth-shell";
 
@@ -10,7 +11,9 @@ export const metadata: Metadata = {
 export default function SignInPage() {
   return (
     <AuthShell>
-      <AuthForm mode="sign-in" />
+      <Suspense fallback={<div className="w-full max-w-md animate-pulse py-12" />}>
+        <AuthForm mode="sign-in" />
+      </Suspense>
     </AuthShell>
   );
 }

@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useState } from "react";
-import { LoaderCircle } from "lucide-react";
+import { LoaderCircle, Check, Circle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ImageUpload } from "@/components/ui/image-upload";
-import { signIn, signUp } from "@/lib/auth-client";
+import { signIn, signUp, authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
 type AuthMode = "sign-in" | "sign-up";
@@ -49,10 +49,32 @@ function getErrorMessage(error: { message?: string } | null | undefined) {
   );
 }
 
-const githubErrorTitle = "Couldn’t continue with GitHub";
+function getDestinationForRole(
+  role?: string,
+  fallbackRedirect?: string | null,
+): string {
+  if (
+    fallbackRedirect &&
+    fallbackRedirect.startsWith("/") &&
+    !fallbackRedirect.startsWith("//")
+  ) {
+    return fallbackRedirect;
+  }
+  if (role === "admin") {
+    return "/dashboard/users";
+  }
+  if (role === "vendor") {
+    return "/dashboard/services";
+  }
+  return "/dashboard";
+}
 
 export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParam =
+    searchParams.get("redirect") || searchParams.get("callbackUrl");
+
   const content = copy[mode];
   const isSignUp = mode === "sign-up";
   const [name, setName] = useState("");
@@ -63,12 +85,43 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSigningInWithGoogle, setIsSigningInWithGoogle] = useState(false);
   const [isSigningInWithGithub, setIsSigningInWithGithub] = useState(false);
+
+  // Password validation criteria
+  const hasMinLength = password.length >= 6;
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasLowercase = /[a-z]/.test(password);
+  const isPasswordValid = hasMinLength && hasUppercase && hasLowercase;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage("");
+
+    if (isSignUp) {
+      if (!hasMinLength) {
+        const msg = "Password must be at least 6 characters long.";
+        setErrorMessage(msg);
+        toast.error("Weak Password", { description: msg });
+        return;
+      }
+      if (!hasUppercase) {
+        const msg = "Password must contain at least one uppercase letter.";
+        setErrorMessage(msg);
+        toast.error("Weak Password", { description: msg });
+        return;
+      }
+      if (!hasLowercase) {
+        const msg = "Password must contain at least one lowercase letter.";
+        setErrorMessage(msg);
+        toast.error("Weak Password", { description: msg });
+        return;
+      }
+    }
+
     setIsSubmitting(true);
+
+    const signupTarget = getDestinationForRole(role, redirectParam);
 
     const result = isSignUp
       ? await (
@@ -89,12 +142,12 @@ export function AuthForm({ mode }: AuthFormProps) {
           businessName:
             role === "vendor" ? businessName.trim() || undefined : undefined,
           image: image.trim() || undefined,
-          callbackURL: "/",
+          callbackURL: signupTarget,
         })
       : await signIn.email({
           email,
           password,
-          callbackURL: "/",
+          callbackURL: redirectParam || "/dashboard",
         });
 
     if (result.error) {
@@ -108,22 +161,57 @@ export function AuthForm({ mode }: AuthFormProps) {
     toast.success(content.successTitle, {
       description: content.successDescription,
     });
-    router.replace("/");
+
+    if (isSignUp) {
+      router.replace(signupTarget);
+      router.refresh();
+    } else {
+      // Determine user role post sign-in
+      try {
+        const sessionRes = await authClient.getSession();
+        const userRole = (sessionRes?.data?.user as { role?: string })?.role;
+        const target = getDestinationForRole(userRole, redirectParam);
+        router.replace(target);
+        router.refresh();
+      } catch {
+        router.replace(redirectParam || "/dashboard");
+        router.refresh();
+      }
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    setErrorMessage("");
+    setIsSigningInWithGoogle(true);
+
+    const target = redirectParam || "/dashboard";
+    const result = await signIn.social({
+      provider: "google",
+      callbackURL: target,
+    });
+
+    if (result?.error) {
+      const message = getErrorMessage(result.error);
+      setErrorMessage(message);
+      toast.error("Couldn’t continue with Google", { description: message });
+      setIsSigningInWithGoogle(false);
+    }
   }
 
   async function handleGithubSignIn() {
     setErrorMessage("");
     setIsSigningInWithGithub(true);
 
+    const target = redirectParam || "/dashboard";
     const result = await signIn.social({
       provider: "github",
-      callbackURL: "/",
+      callbackURL: target,
     });
 
-    if (result.error) {
+    if (result?.error) {
       const message = getErrorMessage(result.error);
       setErrorMessage(message);
-      toast.error(githubErrorTitle, { description: message });
+      toast.error("Couldn’t continue with GitHub", { description: message });
       setIsSigningInWithGithub(false);
     }
   }
@@ -142,19 +230,70 @@ export function AuthForm({ mode }: AuthFormProps) {
         </p>
       </div>
 
-      <div className="mb-6">
+      <div className="space-y-3 mb-6">
         <Button
           type="button"
           variant="outline"
-          className="h-12 w-full gap-3 rounded-md border-border bg-background text-sm hover:bg-secondary active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55"
-          onClick={handleGithubSignIn}
-          disabled={isSigningInWithGithub || isSubmitting}
+          className="h-12 w-full gap-3 rounded-md border-border bg-background text-sm font-medium hover:bg-secondary active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55"
+          onClick={handleGoogleSignIn}
+          disabled={isSigningInWithGoogle || isSigningInWithGithub || isSubmitting}
         >
-          {isSigningInWithGithub && (
+          {isSigningInWithGoogle ? (
             <LoaderCircle
               className="size-4 motion-safe:animate-spin motion-reduce:animate-none"
               aria-hidden="true"
             />
+          ) : (
+            <svg
+              className="size-4 shrink-0"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                fill="#4285F4"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+              />
+            </svg>
+          )}
+          Continue with Google
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11 w-full gap-3 rounded-md border-border bg-background text-sm text-muted-foreground hover:bg-secondary hover:text-foreground active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55"
+          onClick={handleGithubSignIn}
+          disabled={isSigningInWithGoogle || isSigningInWithGithub || isSubmitting}
+        >
+          {isSigningInWithGithub ? (
+            <LoaderCircle
+              className="size-4 motion-safe:animate-spin motion-reduce:animate-none"
+              aria-hidden="true"
+            />
+          ) : (
+            <svg
+              className="size-4 shrink-0 fill-current"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+              />
+            </svg>
           )}
           Continue with GitHub
         </Button>
@@ -289,8 +428,55 @@ export function AuthForm({ mode }: AuthFormProps) {
             placeholder="Enter your password"
             required
             aria-required="true"
-            minLength={8}
+            minLength={6}
           />
+
+          {isSignUp && (
+            <div className="rounded-md border border-border/60 bg-muted/30 p-3 space-y-1.5 text-xs">
+              <p className="font-medium text-muted-foreground">Password requirements:</p>
+              <div className="grid grid-cols-1 gap-1 sm:grid-cols-3">
+                <span
+                  className={cn(
+                    "flex items-center gap-1.5 transition-colors",
+                    hasMinLength ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground",
+                  )}
+                >
+                  {hasMinLength ? (
+                    <Check className="size-3.5 shrink-0" />
+                  ) : (
+                    <Circle className="size-2 shrink-0 fill-current opacity-40" />
+                  )}
+                  6+ characters
+                </span>
+                <span
+                  className={cn(
+                    "flex items-center gap-1.5 transition-colors",
+                    hasUppercase ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground",
+                  )}
+                >
+                  {hasUppercase ? (
+                    <Check className="size-3.5 shrink-0" />
+                  ) : (
+                    <Circle className="size-2 shrink-0 fill-current opacity-40" />
+                  )}
+                  1 uppercase (A-Z)
+                </span>
+                <span
+                  className={cn(
+                    "flex items-center gap-1.5 transition-colors",
+                    hasLowercase ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground",
+                  )}
+                >
+                  {hasLowercase ? (
+                    <Check className="size-3.5 shrink-0" />
+                  ) : (
+                    <Circle className="size-2 shrink-0 fill-current opacity-40" />
+                  )}
+                  1 lowercase (a-z)
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {errorMessage && (
@@ -308,7 +494,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             "h-12 w-full rounded-md text-sm active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55",
             isSubmitting && "cursor-wait",
           )}
-          disabled={isSubmitting || isSigningInWithGithub}
+          disabled={isSubmitting || isSigningInWithGoogle || isSigningInWithGithub || (isSignUp && !isPasswordValid)}
         >
           {isSubmitting && (
             <LoaderCircle
