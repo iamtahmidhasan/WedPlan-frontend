@@ -2,9 +2,8 @@
 
 import { useState, useTransition, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, X, ArrowUpDown, MapPin, RotateCcw, Loader2 } from "lucide-react";
+import { Search, X, RotateCcw, Loader2, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { ServiceCard, type Service } from "@/components/services/service-card";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export const WEDDING_CATEGORIES = [
@@ -144,18 +143,20 @@ export function BrowseServicesCatalog({
     currentLocation !== "all" ||
     currentSort !== "featured";
 
+  const categoriesList = availableCategories.length > 0 ? availableCategories : WEDDING_CATEGORIES;
+
   return (
     <div className="space-y-8">
-      {/* Search and Filters Bar */}
-      <div className="rounded-xl border border-border bg-card p-4 sm:p-6 shadow-xs space-y-4">
-        {/* Top row: Search input + Location dropdown + Price Sort */}
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-12">
-          {/* Search by Name */}
+      {/* Minimal Architectural Filter Bar */}
+      <div className="border border-border bg-card">
+        {/* Top Controls Row */}
+        <div className="grid divide-y divide-border sm:grid-cols-12 sm:divide-y-0 sm:divide-x">
+          {/* Search Input */}
           <form
             onSubmit={handleSearchSubmit}
-            className="relative sm:col-span-2 lg:col-span-5"
+            className="relative flex items-center p-3 sm:col-span-6 lg:col-span-5"
           >
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Search className="size-4 text-muted-foreground shrink-0 ml-1.5 mr-2.5" />
             <input
               type="text"
               value={searchInput}
@@ -165,69 +166,75 @@ export function BrowseServicesCatalog({
                   applyFilters({ search: searchInput });
                 }
               }}
-              placeholder="Search services by name (press Enter)..."
-              className="h-11 w-full rounded-md border border-input bg-background pl-10 pr-9 text-sm outline-none transition-colors placeholder:text-muted-foreground hover:bg-secondary/40 focus:border-ring focus:ring-1 focus:ring-ring"
+              placeholder="Search by service or vendor name..."
+              className="h-9 w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
             />
-            {searchInput ? (
+            {searchInput && (
               <button
                 type="button"
                 onClick={handleClearSearch}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 cursor-pointer"
+                className="p-1 text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
                 aria-label="Clear search"
               >
                 <X className="size-3.5" />
               </button>
-            ) : null}
+            )}
           </form>
 
-          {/* Location Filter */}
-          <div className="relative lg:col-span-4">
-            <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
+          {/* Location Select */}
+          <div className="relative flex items-center p-3 sm:col-span-3 lg:col-span-4">
+            <span className="text-xs font-mono uppercase text-muted-foreground mr-2 shrink-0">
+              Loc:
+            </span>
             <select
               value={currentLocation}
               onChange={(e) => applyFilters({ location: e.target.value })}
-              className="h-11 w-full appearance-none rounded-md border border-input bg-background pl-10 pr-8 text-sm outline-none transition-colors hover:bg-secondary/40 focus:border-ring focus:ring-1 focus:ring-ring cursor-pointer"
+              className="h-9 w-full appearance-none bg-transparent pr-7 text-xs sm:text-sm font-medium text-foreground outline-none cursor-pointer"
             >
-              <option value="all">All Locations</option>
+              <option value="all" className="bg-card text-foreground">All Locations</option>
               {availableLocations.map((loc) => (
-                <option key={loc} value={loc}>
+                <option key={loc} value={loc} className="bg-card text-foreground">
                   {loc}
                 </option>
               ))}
             </select>
+            <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
           </div>
 
-          {/* Price Sorting */}
-          <div className="relative lg:col-span-3">
-            <ArrowUpDown className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
+          {/* Sort Select */}
+          <div className="relative flex items-center p-3 sm:col-span-3 lg:col-span-3">
+            <span className="text-xs font-mono uppercase text-muted-foreground mr-2 shrink-0">
+              Sort:
+            </span>
             <select
               value={currentSort}
               onChange={(e) => applyFilters({ sort: e.target.value })}
-              className="h-11 w-full appearance-none rounded-md border border-input bg-background pl-10 pr-8 text-sm outline-none transition-colors hover:bg-secondary/40 focus:border-ring focus:ring-1 focus:ring-ring cursor-pointer"
+              className="h-9 w-full appearance-none bg-transparent pr-7 text-xs sm:text-sm font-medium text-foreground outline-none cursor-pointer"
             >
-              <option value="featured">Featured / Default</option>
-              <option value="lowest_price">Price: Low to High</option>
-              <option value="highest_price">Price: High to Low</option>
+              <option value="featured" className="bg-card text-foreground">Featured</option>
+              <option value="lowest_price" className="bg-card text-foreground">Price: Low to High</option>
+              <option value="highest_price" className="bg-card text-foreground">Price: High to Low</option>
             </select>
+            <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
           </div>
         </div>
 
-        {/* Category Pills (Dynamic Section 2 / Categories filter) */}
-        <div className="pt-2 border-t border-border">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
+        {/* Minimal Categories Bar */}
+        <div className="border-t border-border px-4 py-2.5 overflow-x-auto no-scrollbar bg-secondary/15">
+          <div className="flex items-center gap-1.5 text-xs">
             <button
               type="button"
               onClick={() => applyFilters({ category: "all" })}
               className={cn(
-                "rounded-full px-3.5 py-1.5 font-medium transition-all shrink-0 cursor-pointer",
+                "px-3 py-1 font-mono uppercase tracking-wider text-[11px] transition-colors cursor-pointer shrink-0 rounded-xs",
                 currentCategory === "all"
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "border border-border bg-background text-muted-foreground hover:bg-secondary hover:text-foreground",
+                  ? "bg-foreground text-background font-semibold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
               )}
             >
-              All Categories
+              All
             </button>
-            {(availableCategories.length > 0 ? availableCategories : WEDDING_CATEGORIES).map((cat) => {
+            {categoriesList.map((cat) => {
               const isActive =
                 currentCategory.toLowerCase() === cat.toLowerCase() ||
                 (currentCategory !== "all" && cat.toLowerCase().includes(currentCategory.toLowerCase()));
@@ -237,10 +244,10 @@ export function BrowseServicesCatalog({
                   type="button"
                   onClick={() => applyFilters({ category: cat })}
                   className={cn(
-                    "rounded-full px-3.5 py-1.5 font-medium transition-all shrink-0 cursor-pointer",
+                    "px-3 py-1 transition-colors cursor-pointer shrink-0 text-xs rounded-xs",
                     isActive
-                      ? "bg-primary text-primary-foreground shadow-xs"
-                      : "border border-border bg-background text-muted-foreground hover:bg-secondary hover:text-foreground",
+                      ? "bg-foreground text-background font-semibold"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
                   )}
                 >
                   {cat}
@@ -250,54 +257,54 @@ export function BrowseServicesCatalog({
           </div>
         </div>
 
-        {/* Filter Summary & Reset Bar */}
+        {/* Active Filter Tags & Reset */}
         {hasActiveFilters && (
-          <div className="flex items-center justify-between pt-2 text-xs text-muted-foreground border-t border-dashed border-border">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-2 text-xs text-muted-foreground bg-background">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-medium text-foreground">Active filters:</span>
+              <span className="font-mono text-[11px] uppercase tracking-wider">Filtered by:</span>
               {currentSearch && (
-                <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
-                  Search: &quot;{currentSearch}&quot;
+                <span className="inline-flex items-center gap-1 rounded-xs border border-border bg-secondary/40 px-2 py-0.5 text-xs text-foreground">
+                  &quot;{currentSearch}&quot;
                   <button
                     type="button"
                     onClick={() => applyFilters({ search: "" })}
-                    className="cursor-pointer hover:text-primary"
+                    className="cursor-pointer hover:text-destructive"
                   >
                     <X className="size-3" />
                   </button>
                 </span>
               )}
               {currentCategory !== "all" && (
-                <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
-                  Category: {currentCategory}
+                <span className="inline-flex items-center gap-1 rounded-xs border border-border bg-secondary/40 px-2 py-0.5 text-xs text-foreground">
+                  {currentCategory}
                   <button
                     type="button"
                     onClick={() => applyFilters({ category: "all" })}
-                    className="cursor-pointer hover:text-primary"
+                    className="cursor-pointer hover:text-destructive"
                   >
                     <X className="size-3" />
                   </button>
                 </span>
               )}
               {currentLocation !== "all" && (
-                <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
-                  Location: {currentLocation}
+                <span className="inline-flex items-center gap-1 rounded-xs border border-border bg-secondary/40 px-2 py-0.5 text-xs text-foreground">
+                  {currentLocation}
                   <button
                     type="button"
                     onClick={() => applyFilters({ location: "all" })}
-                    className="cursor-pointer hover:text-primary"
+                    className="cursor-pointer hover:text-destructive"
                   >
                     <X className="size-3" />
                   </button>
                 </span>
               )}
               {currentSort !== "featured" && (
-                <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
-                  Sort: {currentSort === "lowest_price" ? "Price Low-High" : "Price High-Low"}
+                <span className="inline-flex items-center gap-1 rounded-xs border border-border bg-secondary/40 px-2 py-0.5 text-xs text-foreground">
+                  {currentSort === "lowest_price" ? "Price ↑" : "Price ↓"}
                   <button
                     type="button"
                     onClick={() => applyFilters({ sort: "featured" })}
-                    className="cursor-pointer hover:text-primary"
+                    className="cursor-pointer hover:text-destructive"
                   >
                     <X className="size-3" />
                   </button>
@@ -305,70 +312,63 @@ export function BrowseServicesCatalog({
               )}
             </div>
 
-            <Button
+            <button
               type="button"
-              variant="ghost"
-              size="sm"
               onClick={handleResetAll}
-              className="h-7 text-xs text-primary hover:text-primary/80 gap-1 cursor-pointer shrink-0"
+              className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-muted-foreground hover:text-foreground cursor-pointer"
             >
               <RotateCcw className="size-3" />
-              Reset All
-            </Button>
+              <span>Reset</span>
+            </button>
           </div>
         )}
       </div>
 
-      {/* Result Count Header & Pending Indicator */}
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span className="flex items-center gap-2">
-          {isPending && <Loader2 className="size-3.5 animate-spin text-primary" />}
-          <span>
-            Showing <strong className="text-foreground">{services.length}</strong>{" "}
-            {services.length === 1 ? "wedding service" : "wedding services"}
-          </span>
-        </span>
-      </div>
+      {/* Loading Transition Indicator */}
+      {isPending && (
+        <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
+          <Loader2 className="mr-2 size-4 animate-spin text-primary" />
+          <span>Updating directory...</span>
+        </div>
+      )}
 
-      {/* Services Grid or Empty State */}
-      {services.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card p-12 text-center sm:p-16">
-          <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary mb-4">
-            <Search className="size-6" />
+      {/* Services Grid */}
+      {!isPending && services.length > 0 && (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {services.map((service, index) => (
+            <div key={service._id} className="h-full">
+              <ServiceCard
+                service={service}
+                featured={index === 0 && currentSort === "featured"}
+                vendorName={vendorMap.get(service.vendorId)}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!isPending && services.length === 0 && (
+        <div className="flex flex-col items-center justify-center border border-border bg-card p-12 text-center sm:p-16">
+          <div className="flex size-12 items-center justify-center rounded-full border border-border bg-secondary/50 text-muted-foreground">
+            <SlidersHorizontal className="size-5" />
           </div>
-          <h3 className="font-heading text-xl font-bold text-foreground sm:text-2xl">
-            No wedding services found
+          <h3 className="mt-4 font-heading text-2xl text-foreground">
+            No matching services found
           </h3>
-          <p className="mt-2 max-w-[42ch] text-sm text-muted-foreground leading-relaxed">
-            We couldn&apos;t find any services matching your current search or filter criteria. Try adjusting your query or resetting all filters.
+          <p className="mt-2 max-w-sm text-xs leading-relaxed text-muted-foreground">
+            We couldn’t find any approved services matching your active filters. Try broadening your location or resetting filters.
           </p>
-          <div className="mt-6 flex justify-center">
-            <Button
+          {hasActiveFilters && (
+            <button
               type="button"
-              variant="outline"
-              size="sm"
               onClick={handleResetAll}
-              className="gap-2 cursor-pointer"
+              className="mt-6 inline-flex h-9 items-center gap-2 rounded-xs border border-border bg-background px-4 text-xs font-mono uppercase tracking-wider text-foreground hover:bg-secondary cursor-pointer"
             >
               <RotateCcw className="size-3.5" />
-              Reset All Filters
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <div
-          className={cn(
-            "grid gap-6 sm:grid-cols-2 xl:grid-cols-3 transition-opacity duration-200",
-            isPending && "opacity-60",
+              <span>Reset all filters</span>
+            </button>
           )}
-        >
-          {services.map((service) => (
-            <ServiceCard
-              key={service._id}
-              service={service}
-              vendorName={vendorMap.get(service.vendorId)}
-            />
-          ))}
         </div>
       )}
     </div>

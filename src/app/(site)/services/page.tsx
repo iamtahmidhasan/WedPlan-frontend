@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { Suspense } from "react";
+import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 import { type Service } from "@/components/services/service-card";
 import { BrowseServicesCatalog } from "@/components/services/browse-services-catalog";
 import { apiFetch } from "@/lib/core/server";
@@ -46,7 +47,6 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
   let availableLocations: string[] = [];
   let availableCategories: string[] = [];
   let users: UserSummary[] = [];
-  let hasError = false;
 
   try {
     const [servicesRes, allServicesRes, categoriesRes, usersRes] = await Promise.all([
@@ -59,7 +59,6 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
     if (!servicesRes.ok) throw new Error("Request failed");
 
     const rawFilteredServices = (await servicesRes.json()) as Service[];
-    // Public directory only displays active and approved services
     services = rawFilteredServices.filter((s) => !s.status || s.status === "approved");
 
     if (allServicesRes && allServicesRes.ok) {
@@ -80,103 +79,93 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
       users = (await usersRes.json()) as UserSummary[];
     }
   } catch {
-    hasError = true;
+    // Graceful fallback
   }
 
-  const heroImages = services
-    .slice(0, 2)
-    .map((service) => service.images?.[0])
-    .filter((image): image is string => Boolean(image));
+  const CATEGORY_TICKERS = [
+    { label: "All", query: "all" },
+    { label: "Photography", query: "photography" },
+    { label: "Venues", query: "venue" },
+    { label: "Decoration", query: "decoration" },
+    { label: "Catering", query: "catering" },
+    { label: "Makeup", query: "makeup" },
+    { label: "Fashion", query: "fashion" },
+  ];
 
   return (
     <main className="bg-background min-h-screen">
-      {/* Hero Directory Header */}
-      <section className="relative overflow-hidden border-b border-border bg-secondary/50">
-        <div className="mx-auto grid w-full max-w-7xl gap-12 px-6 py-14 sm:px-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:items-center lg:gap-16 lg:py-20">
-          <div className="relative z-10">
-            <p className="text-xs uppercase tracking-[0.24em] text-primary font-semibold">
-              The WedPlan Directory
-            </p>
-            <h1 className="mt-4 font-heading text-5xl leading-[0.94] tracking-[-0.04em] text-foreground sm:text-6xl lg:text-7xl">
-              Find the people
-              <br />
-              who make the <span className="text-primary">day yours.</span>
-            </h1>
-            <p className="mt-6 max-w-[48ch] text-base leading-7 text-muted-foreground">
-              Vetted venues, photographers, florists, caterers, and wedding specialists — gathered in
-              one calm place so you can discover, filter, and plan with confidence.
-            </p>
-            <div className="mt-8 flex items-center gap-5">
-              <span className="font-heading text-4xl font-bold leading-none text-foreground sm:text-5xl">
-                {services.length}
-              </span>
-              <span className="text-xs sm:text-sm leading-5 text-muted-foreground">
-                approved services,
-                <br />
-                matching your filters.
-              </span>
+      {/* Ultra Minimal Editorial Header */}
+      <section className="border-b border-border bg-background pt-14 pb-12 sm:pt-20 sm:pb-16">
+        <div className="mx-auto w-full max-w-7xl px-6 sm:px-10">
+          <div className="flex flex-col justify-between gap-8 border-b border-border pb-10 md:flex-row md:items-end">
+            <div className="max-w-2xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+                Directory Catalog
+              </p>
+              <h1 className="mt-3 font-heading text-5xl tracking-tight text-foreground sm:text-6xl lg:text-7xl">
+                Services
+              </h1>
+              <p className="mt-4 text-sm sm:text-base leading-relaxed text-muted-foreground max-w-[52ch]">
+                Hand-vetted venues, photographers, florists, and catering specialists.
+                Filter by discipline, location, and transparent pricing.
+              </p>
+            </div>
+
+            {/* Clean mono metrics */}
+            <div className="flex items-center gap-8 border-t border-border/80 pt-6 md:border-t-0 md:pt-0 shrink-0">
+              <div>
+                <p className="font-heading text-3xl font-bold text-foreground">
+                  {services.length}
+                </p>
+                <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+                  Approved Listings
+                </p>
+              </div>
+              <div className="h-8 w-px bg-border" />
+              <div>
+                <p className="font-heading text-3xl font-bold text-foreground">
+                  {availableCategories.length || 6}
+                </p>
+                <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+                  Disciplines
+                </p>
+              </div>
             </div>
           </div>
 
-          <div className="relative hidden h-72 sm:block lg:h-96">
-            <div
-              className="absolute right-6 top-0 size-52 rounded-full border border-primary/30 lg:size-72"
-              aria-hidden="true"
-            />
-            {heroImages[0] && (
-              <div className="absolute left-0 top-4 h-[85%] w-[68%] overflow-hidden border border-border bg-background shadow-sm rounded-lg">
-                <Image
-                  src={heroImages[0]}
-                  alt="Featured wedding venue"
-                  fill
-                  priority
-                  sizes="(min-width: 1024px) 35vw, 50vw"
-                  className="object-cover"
-                />
-              </div>
-            )}
-            {heroImages[1] && (
-              <div className="absolute bottom-0 right-0 h-[72%] w-[58%] overflow-hidden border border-border bg-background shadow-md rounded-lg">
-                <Image
-                  src={heroImages[1]}
-                  alt="Featured wedding floral and decoration"
-                  fill
-                  sizes="(min-width: 1024px) 30vw, 45vw"
-                  className="object-cover"
-                />
-              </div>
-            )}
+          {/* Minimalist Horizontal Discipline Nav */}
+          <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-mono uppercase tracking-wider">
+            <span className="text-muted-foreground">Filter:</span>
+            {CATEGORY_TICKERS.map((cat) => {
+              const isActive =
+                category === cat.query ||
+                (cat.query === "all" && category === "all");
+              return (
+                <Link
+                  key={cat.label}
+                  href={
+                    cat.query === "all"
+                      ? "/services"
+                      : `/services?category=${cat.query}`
+                  }
+                  className={`transition-colors flex items-center gap-1 ${
+                    isActive
+                      ? "text-primary font-bold underline underline-offset-4"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <span>{cat.label}</span>
+                  {isActive && <ArrowUpRight className="size-3" />}
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* Main Browse Catalog Section */}
-      <section className="mx-auto w-full max-w-7xl px-6 py-12 sm:px-10 lg:py-16">
-        <div className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-primary font-semibold">
-              Browse & Filter
-            </p>
-            <h2 className="mt-1 font-heading text-3xl font-bold text-foreground sm:text-4xl">
-              Explore Wedding Services
-            </h2>
-          </div>
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            {hasError ? "Directory unavailable" : `${services.length} approved listings`}
-          </p>
-        </div>
-
-        {hasError && (
-          <p
-            role="alert"
-            className="mb-8 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-          >
-            We couldn’t load the services right now. Please try again in a
-            moment.
-          </p>
-        )}
-
-        <Suspense fallback={<div className="h-96 w-full animate-pulse rounded-xl bg-muted/40" />}>
+      <section className="mx-auto w-full max-w-7xl px-6 py-10 sm:px-10 lg:py-14">
+        <Suspense fallback={<div className="h-96 animate-pulse rounded-xl bg-secondary/50" />}>
           <BrowseServicesCatalog
             services={services}
             availableLocations={availableLocations}
