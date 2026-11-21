@@ -1,137 +1,122 @@
 "use client";
 
-import { motion, type Variants } from "motion/react";
-import { Search, CalendarCheck, Heart, Star, Sparkles } from "lucide-react";
+import { Search, CalendarCheck, Heart, ArrowUpRight } from "lucide-react";
+import Link from "next/link";
 
 const STEPS = [
   {
     step: "01",
     icon: Search,
+    phase: "First Step",
     title: "Discover & Filter",
     description:
-      "Browse hand-vetted wedding specialists. Filter by category, location, and price to find the perfect creative matches for your unique aesthetic.",
+      "Browse hand-vetted wedding specialists. Filter by category, location, and transparent pricing to find the perfect creative matches.",
   },
   {
     step: "02",
     icon: CalendarCheck,
-    title: "Submit Booking Requests",
+    phase: "Direct Connection",
+    title: "Submit Inquiries",
     description:
-      "Send custom booking inquiries directly to vendors with your event date, location, and wedding vision with zero middleman friction.",
+      "Send custom booking requests directly to vendors with your event date, venue details, and vision without third-party friction.",
   },
   {
     step: "03",
     icon: Heart,
-    title: "Celebrate Stress-Free",
+    phase: "Your Celebration",
+    title: "Plan Stress-Free",
     description:
-      "Track accepted bookings in your personal dashboard, coordinate details directly with vendors, and celebrate your unforgettable day.",
+      "Track accepted bookings in your personal dashboard, review service details, and celebrate your unforgettable day with confidence.",
   },
 ];
 
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.15 },
-  },
-};
-
-const stepVariants: Variants = {
-  hidden: { opacity: 0, y: 24 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, ease: "easeOut" },
-  },
-};
-
 export function HowItWorksSection() {
   return (
-    <section className="border-b border-border bg-background py-16 sm:py-24">
+    <section className="border-b border-border bg-background py-20 sm:py-28">
       <div className="mx-auto w-full max-w-7xl px-6 sm:px-10">
-        {/* Section Header */}
-        <div className="mx-auto max-w-2xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3.5 py-1 text-xs font-semibold text-primary">
-            <Sparkles className="size-3.5" />
-            <span>Simple 3-Step Process</span>
+        {/* Minimal Section Header */}
+        <div className="flex flex-col justify-between gap-6 border-b border-border pb-8 sm:flex-row sm:items-end">
+          <div className="max-w-xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+              The Journey
+            </p>
+            <h2 className="mt-2 font-heading text-4xl tracking-tight text-foreground sm:text-5xl">
+              How WedPlan Works
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              A clear, three-part path from first inspiration to your
+              celebration.
+            </p>
           </div>
-          <h2 className="mt-4 font-heading text-4xl leading-tight text-foreground sm:text-5xl">
-            How WedPlan Works
-          </h2>
-          <p className="mt-3 text-base text-muted-foreground leading-relaxed">
-            From the first venue inspiration to the final dance, we make connecting with wedding vendors simple, transparent, and joyful.
-          </p>
+
+          <Link
+            href="/sign-up"
+            className="group inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground shrink-0"
+          >
+            <span>Create Account</span>
+            <ArrowUpRight className="size-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          </Link>
         </div>
 
-        {/* Steps Grid */}
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-60px" }}
-          className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3 relative"
-        >
-          {STEPS.map((item, index) => {
+        {/* Minimal Architectural 3-Column Grid */}
+        <div className="grid divide-y divide-border sm:grid-cols-2 sm:divide-y-0 sm:divide-x sm:border-border lg:grid-cols-3">
+          {STEPS.map((item) => {
             const Icon = item.icon;
             return (
-              <motion.div
+              <div
                 key={item.step}
-                variants={stepVariants}
-                className="relative flex flex-col rounded-xl border border-border bg-card p-8 shadow-xs transition-all hover:border-primary/50 hover:shadow-md"
+                className="group relative flex flex-col justify-between p-8 transition-colors hover:bg-secondary/40 sm:border-b sm:border-border"
               >
-                {/* Step Number Badge */}
-                <div className="flex items-center justify-between mb-6">
-                  <span className="font-heading text-4xl font-extrabold text-primary/30">
-                    {item.step}
-                  </span>
-                  <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <Icon className="size-5" />
+                <div>
+                  <div className="flex items-center justify-between text-muted-foreground">
+                    <span className="font-mono text-xs">{item.step}</span>
+                    <Icon className="size-4.5 text-muted-foreground transition-colors group-hover:text-primary" />
                   </div>
+
+                  <p className="mt-6 text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
+                    {item.phase}
+                  </p>
+
+                  <h3 className="mt-1 font-heading text-2xl text-foreground transition-colors group-hover:text-primary">
+                    {item.title}
+                  </h3>
+
+                  <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                    {item.description}
+                  </p>
                 </div>
 
-                <h3 className="font-heading text-xl font-bold text-foreground">
-                  {item.title}
-                </h3>
-                <p className="mt-3 text-sm text-muted-foreground leading-relaxed flex-1">
-                  {item.description}
-                </p>
-
-                {index < STEPS.length - 1 && (
-                  <div className="hidden lg:block absolute -right-4 top-1/2 -translate-y-1/2 z-10 text-muted-foreground/30 font-bold text-xl">
-                    →
-                  </div>
-                )}
-              </motion.div>
+                <div className="mt-8 pt-4 border-t border-border/60">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground/80">
+                    Step {item.step} of 03
+                  </span>
+                </div>
+              </div>
             );
           })}
-        </motion.div>
+        </div>
 
-        {/* Customer Testimonial Highlight Card */}
-        <div className="mt-16 rounded-2xl border border-border bg-secondary/50 p-8 sm:p-10">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div className="max-w-2xl">
-              <div className="flex items-center gap-1 text-amber-500 mb-3">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="size-4 fill-current" />
-                ))}
-              </div>
-              <blockquote className="font-heading text-lg sm:text-xl text-foreground italic leading-relaxed">
-                &ldquo;WedPlan completely changed how we organized our destination wedding. We found our photographer and florist in one afternoon, and managing all booking responses in the dashboard saved us countless hours.&rdquo;
-              </blockquote>
-              <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-primary">
-                — Sophia &amp; Liam, Married in Napa Valley
+        {/* Minimal Editorial Quote */}
+        <div className="mt-12 flex flex-col justify-between gap-6 border-b border-border pb-8 md:flex-row md:items-center">
+          <blockquote className="font-heading text-xl text-foreground/90 italic max-w-2xl">
+            &ldquo;We found our photographer and florist in one afternoon.
+            Keeping all booking responses in the dashboard saved us countless
+            hours.&rdquo;
+          </blockquote>
+
+          <div className="flex items-center gap-8 shrink-0 text-xs">
+            <div>
+              <p className="font-heading text-2xl font-bold text-foreground">
+                98%
               </p>
+              <p className="text-muted-foreground">Couple Satisfaction</p>
             </div>
-
-            <div className="flex items-center gap-6 border-t lg:border-t-0 lg:border-l border-border pt-4 lg:pt-0 lg:pl-8 text-center shrink-0">
-              <div>
-                <p className="font-heading text-3xl font-bold text-foreground">98%</p>
-                <p className="text-xs text-muted-foreground">Couples Satisfied</p>
-              </div>
-              <div className="h-8 w-px bg-border" />
-              <div>
-                <p className="font-heading text-3xl font-bold text-foreground">500+</p>
-                <p className="text-xs text-muted-foreground">Vetted Vendors</p>
-              </div>
+            <div className="h-6 w-px bg-border" />
+            <div>
+              <p className="font-heading text-2xl font-bold text-foreground">
+                500+
+              </p>
+              <p className="text-muted-foreground">Verified Vendors</p>
             </div>
           </div>
         </div>

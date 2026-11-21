@@ -1,138 +1,105 @@
 "use client";
 
-import { ShieldCheck, HeartHandshake, Sparkles, Clock, CheckCircle2, ArrowRight } from "lucide-react";
+import {
+  ShieldCheck,
+  HeartHandshake,
+  Sparkles,
+  Clock,
+  ArrowUpRight,
+} from "lucide-react";
 import Link from "next/link";
-import { motion, type Variants } from "motion/react";
 
 const BENEFITS = [
   {
+    number: "01",
     icon: ShieldCheck,
-    title: "Hand-Vetted Wedding Vendors",
+    title: "Hand-Vetted Vendors",
     description:
-      "Every photographer, venue, and florist is personally reviewed and verified to guarantee exceptional artistry and reliable communication.",
+      "Every photographer, venue, and artisan is personally reviewed to ensure reliable communication and verified artistry.",
   },
   {
+    number: "02",
     icon: Sparkles,
-    title: "Direct & Transparent Pricing",
+    title: "Transparent Pricing",
     description:
-      "Explore honest, starting-price transparency with zero surprise commission fees or hidden middleman markups.",
+      "Honest starting prices with zero hidden markups or commission surprises. What you see is what you plan for.",
   },
   {
+    number: "03",
     icon: HeartHandshake,
-    title: "Personalized Coordination Hub",
+    title: "Calm Coordination",
     description:
-      "Track all your booking requests, review accepted vendor contracts, and bookmark inspiring services in one calm dashboard.",
+      "Manage booking inquiries, review accepted contracts, and save your favorite services in one unified space.",
   },
   {
+    number: "04",
     icon: Clock,
-    title: "Swift Confirmations & Peace of Mind",
+    title: "Swift Confirmations",
     description:
-      "Send custom event dates and details directly to vendors and receive prompt acceptances with full booking history tracking.",
+      "Send custom event dates and requirements directly to vendors and receive prompt responses without endless email chains.",
   },
 ];
 
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.12,
-    },
-  },
-};
-
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, ease: "easeOut" },
-  },
-};
-
 export function WhyChooseSection() {
   return (
-    <section className="relative overflow-hidden border-b border-border bg-secondary/40 py-16 sm:py-24">
-      {/* Decorative ambient background blur */}
-      <div
-        className="pointer-events-none absolute -left-20 top-1/2 size-72 -translate-y-1/2 rounded-full bg-primary/5 blur-3xl"
-        aria-hidden="true"
-      />
-      <div
-        className="pointer-events-none absolute -right-20 top-1/3 size-72 rounded-full bg-primary/5 blur-3xl"
-        aria-hidden="true"
-      />
-
-      <div className="relative mx-auto w-full max-w-7xl px-6 sm:px-10">
-        {/* Section Header */}
-        <div className="mx-auto max-w-2xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3.5 py-1 text-xs font-semibold text-primary">
-            <CheckCircle2 className="size-3.5" />
-            <span>The WedPlan Promise</span>
+    <section className="border-b border-border bg-background py-20 sm:py-28">
+      <div className="mx-auto w-full max-w-7xl px-6 sm:px-10">
+        {/* Minimal Section Header */}
+        <div className="flex flex-col justify-between gap-6 border-b border-border pb-8 sm:flex-row sm:items-end">
+          <div className="max-w-xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+              The WedPlan Promise
+            </p>
+            <h2 className="mt-2 font-heading text-4xl tracking-tight text-foreground sm:text-5xl">
+              Why Choose WedPlan?
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Planning your wedding should feel like a celebration, not a
+              spreadsheet.
+            </p>
           </div>
-          <h2 className="mt-4 font-heading text-4xl leading-tight text-foreground sm:text-5xl">
-            Why Choose WedPlan?
-          </h2>
-          <p className="mt-3 text-base text-muted-foreground leading-relaxed">
-            Planning your wedding should feel like a celebration, not a spreadsheet. We designed WedPlan to take the noise out of wedding coordination.
-          </p>
+
+          <Link
+            href="/services"
+            className="group inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground shrink-0"
+          >
+            <span>Start Planning</span>
+            <ArrowUpRight className="size-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          </Link>
         </div>
 
-        {/* 4 Benefits Cards Grid */}
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-60px" }}
-          className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
-        >
+        {/* Minimal Architectural Grid */}
+        <div className="grid divide-y divide-border sm:grid-cols-2 sm:divide-y-0 sm:divide-x  sm:border-border lg:grid-cols-4">
           {BENEFITS.map((benefit) => {
             const Icon = benefit.icon;
             return (
-              <motion.div
+              <div
                 key={benefit.title}
-                variants={itemVariants}
-                className="group relative flex flex-col rounded-xl border border-border bg-card p-6 shadow-xs transition-all duration-300 hover:border-primary/50 hover:bg-card hover:shadow-md"
+                className="group relative flex flex-col justify-between p-8 transition-colors hover:bg-secondary/40 sm:border-b sm:border-border"
               >
-                <div className="mb-5 flex size-12 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                  <Icon className="size-6" />
+                <div>
+                  <div className="flex items-center justify-between text-muted-foreground">
+                    <span className="font-mono text-xs">{benefit.number}</span>
+                    <Icon className="size-4.5 text-muted-foreground transition-colors group-hover:text-primary" />
+                  </div>
+
+                  <h3 className="mt-8 font-heading text-2xl text-foreground transition-colors group-hover:text-primary">
+                    {benefit.title}
+                  </h3>
+
+                  <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                    {benefit.description}
+                  </p>
                 </div>
-                <h3 className="font-heading text-lg font-bold text-foreground">
-                  {benefit.title}
-                </h3>
-                <p className="mt-2 text-xs text-muted-foreground leading-relaxed flex-1">
-                  {benefit.description}
-                </p>
-              </motion.div>
+
+                <div className="mt-8 pt-4 border-t border-border/60">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground/80">
+                    Guaranteed standard
+                  </span>
+                </div>
+              </div>
             );
           })}
-        </motion.div>
-
-        {/* Bottom CTA Banner */}
-        <div className="mt-12 rounded-xl border border-primary/20 bg-background/80 p-6 sm:p-8 backdrop-blur-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-          <div>
-            <h3 className="font-heading text-xl font-bold text-foreground">
-              Ready to create your dream wedding team?
-            </h3>
-            <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-              Explore hundreds of verified vendors and submit booking inquiries today.
-            </p>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <Link
-              href="/services"
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              <span>Explore Services</span>
-              <ArrowRight className="size-3.5" />
-            </Link>
-            <Link
-              href="/sign-up"
-              className="inline-flex h-10 items-center justify-center rounded-md border border-border bg-background px-4 text-xs font-medium text-foreground hover:bg-secondary transition-colors"
-            >
-              Sign Up Free
-            </Link>
-          </div>
         </div>
       </div>
     </section>

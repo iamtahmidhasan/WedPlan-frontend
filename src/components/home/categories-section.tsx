@@ -2,44 +2,65 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Camera, Home, Flower2, Utensils, Sparkles, Shirt } from "lucide-react";
+import { useState } from "react";
+import {
+  ArrowUpRight,
+  Camera,
+  Home,
+  Flower2,
+  Utensils,
+  Sparkles,
+  Shirt,
+} from "lucide-react";
 
-// Predefined categories with pictures and icons
+// Curated list of categories with iconic symbols, high-res editorial imagery, and descriptions
 const ALL_CATEGORIES = [
   {
     name: "Photography & Videography",
-    image: "https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=800&q=80",
-    description: "Candid emotional portraits, drone visuals & cinematic wedding films.",
+    query: "photography",
+    description: "Candid portraits, drone visuals & cinematic films.",
+    image:
+      "https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=1200&q=80",
     icon: Camera,
   },
   {
     name: "Wedding Venues",
-    image: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=800&q=80",
-    description: "Historic estates, rustic barns, seaside villas & luxury ballrooms.",
+    query: "venue",
+    description: "Historic estates, gardens, coastal terraces & ballrooms.",
+    image:
+      "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1200&q=80",
     icon: Home,
   },
   {
     name: "Decoration & Florist",
-    image: "https://images.unsplash.com/photo-1526047932273-341f2a7631f9?auto=format&fit=crop&w=800&q=80",
-    description: "Bespoke floral arches, candlelit tablescapes & ambient installations.",
+    query: "decoration",
+    description: "Floral arches, bespoke tablescapes & ambient installations.",
+    image:
+      "https://images.unsplash.com/photo-1526047932273-341f2a7631f9?auto=format&fit=crop&w=1200&q=80",
     icon: Flower2,
   },
   {
     name: "Catering Services",
-    image: "https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=800&q=80",
-    description: "Artisanal multi-course dining, custom cocktails & wedding bakeries.",
+    query: "catering",
+    description: "Multi-course dining, cocktail bars & artisan bakeries.",
+    image:
+      "https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=1200&q=80",
     icon: Utensils,
   },
   {
     name: "Makeup & Styling",
-    image: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=800&q=80",
-    description: "Bridal hair artistry, luminous glam & wedding morning wellness.",
+    query: "makeup",
+    description: "Bridal hair artistry, timeless glam & wellness styling.",
+    image:
+      "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=1200&q=80",
     icon: Sparkles,
   },
   {
     name: "Wedding Fashion",
-    image: "https://images.unsplash.com/photo-1594552072238-b8a33785b261?auto=format&fit=crop&w=800&q=80",
-    description: "Couture gowns, modern tailored suits, veil designs & bridal jewelry.",
+    query: "fashion",
+    description: "Couture gowns, modern tuxedos, veil designs & jewelry.",
+    image:
+      "https://images.unsplash.com/photo-1594552072238-b8a33785b261?auto=format&fit=crop&w=1200&q=80",
     icon: Shirt,
   },
 ];
@@ -49,31 +70,32 @@ interface CategoriesSectionProps {
 }
 
 export function CategoriesSection({ categories = [] }: CategoriesSectionProps) {
-  // Only show categories that exist in the database
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+
   const matched = ALL_CATEGORIES.filter((item) =>
     categories.some(
       (c) =>
         c.toLowerCase() === item.name.toLowerCase() ||
         item.name.toLowerCase().includes(c.toLowerCase()) ||
-        c.toLowerCase().includes(item.name.toLowerCase())
-    )
+        c.toLowerCase().includes(item.name.toLowerCase()),
+    ),
   );
 
-  // Also include any newly created categories from admin
   const custom = categories
     .filter(
       (catName) =>
         !matched.some(
           (m) =>
             m.name.toLowerCase() === catName.toLowerCase() ||
-            catName.toLowerCase().includes(m.name.toLowerCase())
-        )
+            catName.toLowerCase().includes(m.name.toLowerCase()),
+        ),
     )
     .map((name) => ({
       name,
-      image:
-        "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80",
+      query: name.toLowerCase(),
       description: `Bespoke ${name} specialists and packages.`,
+      image:
+        "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80",
       icon: Sparkles,
     }));
 
@@ -81,71 +103,90 @@ export function CategoriesSection({ categories = [] }: CategoriesSectionProps) {
     categories.length > 0 ? [...matched, ...custom] : ALL_CATEGORIES;
 
   return (
-    <section className="border-b border-border bg-background py-16 sm:py-24">
+    <section className="border-b border-border bg-background py-20 sm:py-28">
       <div className="mx-auto w-full max-w-7xl px-6 sm:px-10">
-        {/* Header */}
-        <div className="mb-12 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 border-b border-border pb-6">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="h-px w-6 bg-primary" aria-hidden="true" />
-              <p className="text-xs uppercase tracking-[0.24em] text-primary font-semibold">
-                Explore by Specialization
-              </p>
-            </div>
-            <h2 className="mt-3 font-heading text-4xl text-foreground sm:text-5xl">
-              Wedding Service Categories
+        {/* Minimal Section Header */}
+        <div className="flex flex-col justify-between gap-6 border-b border-border pb-8 sm:flex-row sm:items-end">
+          <div className="max-w-xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+              Specializations
+            </p>
+            <h2 className="mt-2 font-heading text-4xl tracking-tight text-foreground sm:text-5xl">
+              Categories
             </h2>
-            <p className="mt-2 text-sm text-muted-foreground max-w-[50ch]">
-              Discover curated wedding professionals across all key specialties for your celebration.
+            <p className="mt-2 text-sm text-muted-foreground">
+              Every detail of your celebration, organized into dedicated
+              disciplines.
             </p>
           </div>
+
           <Link
             href="/services"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors shrink-0 group"
+            className="group inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground shrink-0"
           >
-            <span>Explore all services</span>
-            <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+            <span>All Services</span>
+            <ArrowUpRight className="size-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
           </Link>
         </div>
 
-        {/* Categories Grid */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {activeCategories.map((category) => {
+        {/* Minimal Grid with Hover Background Image Reveal */}
+        <div className="grid divide-y divide-border sm:grid-cols-2 sm:divide-y-0 sm:divide-x sm:border-border lg:grid-cols-3">
+          {activeCategories.map((category, index) => {
             const Icon = category.icon;
+            const number = String(index + 1).padStart(2, "0");
+            const isHovered = activeCategory === category.name;
+
             return (
               <Link
                 key={category.name}
-                href={`/services?category=${encodeURIComponent(category.name)}`}
-                className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:border-primary/50 hover:shadow-md"
+                href={`/services?category=${encodeURIComponent(category.query)}`}
+                onMouseEnter={() => setActiveCategory(category.name)}
+                onMouseLeave={() => setActiveCategory(null)}
+                onFocus={() => setActiveCategory(category.name)}
+                onBlur={() => setActiveCategory(null)}
+                className="group relative flex flex-col justify-between overflow-hidden p-8 transition-all duration-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:border-b sm:border-border"
               >
-                {/* Image */}
-                <div className="relative aspect-[16/10] w-full overflow-hidden bg-secondary">
+                {/* Background Image Reveal on Hover / Active */}
+                <div
+                  className={`pointer-events-none absolute inset-0 z-0 transition-opacity duration-500 ease-out ${
+                    isHovered ? "opacity-100" : "opacity-0"
+                  }`}
+                  aria-hidden="true"
+                >
                   <Image
                     src={category.image}
-                    alt={category.name}
+                    alt=""
                     fill
                     sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    className="scale-105 object-cover transition-transform duration-700 ease-out group-hover:scale-100"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
-                  <div className="absolute top-3 left-3 rounded-full bg-background/90 p-2 text-primary shadow-xs backdrop-blur-xs">
-                    <Icon className="size-4" />
-                  </div>
+                  {/* Gentle gradient overlay to keep images vibrant and bright while ensuring readability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/40 to-background/50 dark:from-background/85 dark:via-background/50 dark:to-background/60" />
                 </div>
 
-                {/* Content */}
-                <div className="flex flex-1 flex-col p-5">
-                  <h3 className="font-heading text-xl font-bold text-foreground transition-colors group-hover:text-primary">
+                {/* Card Content (z-10 relative) */}
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between text-muted-foreground">
+                    <span className="font-mono text-xs transition-colors group-hover:text-foreground font-semibold">
+                      {number}
+                    </span>
+                    <span className="rounded-full bg-background/60 p-1.5 backdrop-blur-xs transition-all group-hover:bg-primary group-hover:text-primary-foreground">
+                      <Icon className="size-4" />
+                    </span>
+                  </div>
+
+                  <h3 className="mt-8 font-heading text-2xl text-foreground transition-colors group-hover:text-primary drop-shadow-2xs">
                     {category.name}
                   </h3>
-                  <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed flex-1">
+
+                  <p className="mt-2 text-xs leading-relaxed text-muted-foreground transition-colors group-hover:text-foreground font-medium drop-shadow-2xs">
                     {category.description}
                   </p>
+                </div>
 
-                  <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-3 text-xs font-semibold text-primary">
-                    <span>Explore {category.name.split(" ")[0]}</span>
-                    <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-1" />
-                  </div>
+                <div className="relative z-10 mt-8 flex items-center gap-1.5 text-xs font-semibold text-foreground/80 transition-colors group-hover:text-primary">
+                  <span>Explore</span>
+                  <ArrowUpRight className="size-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                 </div>
               </Link>
             );
