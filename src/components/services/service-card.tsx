@@ -12,6 +12,9 @@ export type Service = {
   price: number;
   location: string;
   images: string[];
+  status?: "pending" | "approved" | "rejected";
+  rejectionReason?: string;
+  createdAt?: string;
 };
 
 const currency = new Intl.NumberFormat("en-US", {
