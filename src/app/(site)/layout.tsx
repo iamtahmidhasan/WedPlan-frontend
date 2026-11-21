@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import { FloatingChatBot } from "@/components/chat/floating-chatbot";
 import { apiFetch } from "@/lib/core/server";
 
 export default async function SiteLayout({ children }: { children: ReactNode }) {
@@ -28,6 +29,7 @@ export default async function SiteLayout({ children }: { children: ReactNode }) 
       <Header mode="solid" />
       <div className="min-h-0 flex-1 pt-16">{children}</div>
       <Footer categories={categories} />
+      <FloatingChatBot />
     </div>
   );
 }
