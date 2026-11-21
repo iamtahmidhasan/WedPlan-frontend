@@ -31,6 +31,7 @@ export type HeaderMode = "solid" | "overlay";
 const navigation = [
   { label: "Home", href: "/" },
   { label: "Browse Services", href: "/services" },
+  { label: "Vendors", href: "/vendors" },
 ];
 
 function getInitials(name: string) {

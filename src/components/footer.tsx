@@ -166,6 +166,14 @@ export function Footer() {
               </li>
               <li>
                 <Link
+                  href="/vendors"
+                  className="text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Vendors Directory
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/sign-in"
                   className="text-muted-foreground transition-colors hover:text-foreground"
                 >
