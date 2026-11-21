@@ -27,10 +27,9 @@ export default async function SuccessPage({
   if (!session_id)
     throw new Error("Please provide a valid session_id (`cs_test_...`)");
 
-  const { status, payment_status, customer_email, metadata, payment_intent } =
-    await stripe.checkout.sessions.retrieve(session_id, {
-      expand: ["line_items", "payment_intent"],
-    });
+  const { status } = await stripe.checkout.sessions.retrieve(session_id, {
+    expand: ["line_items", "payment_intent"],
+  });
   if (status === "open") {
     return redirect("/");
   }

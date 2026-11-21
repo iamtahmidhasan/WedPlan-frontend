@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Check, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import PaymentButton from "../PaymentButton";
 
 const PREMIUM_BENEFITS = [
