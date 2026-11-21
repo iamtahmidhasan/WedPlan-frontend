@@ -14,7 +14,10 @@ import {
   XCircle,
   Compass,
   User,
+  PlusCircle,
+  CalendarCheck,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { auth } from "@/lib/auth";
 import { apiFetch } from "@/lib/core/server";
 import { getPremiumById } from "@/lib/actions/getPremiumById";
@@ -301,58 +304,204 @@ export default async function DashboardPage() {
         </>
       )}
 
-      {/* VENDOR OVERVIEW */}
+      {/* VENDOR OVERVIEW (5 Metrics as specified in Assignment 9) */}
       {isVendor && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-lg border bg-card p-5 shadow-xs">
-            <span className="text-xs font-medium text-muted-foreground">Total Services</span>
-            <div className="mt-3 text-3xl font-bold">{services.length}</div>
-            <p className="text-xs text-muted-foreground mt-0.5">Published listings</p>
-          </div>
-
-          <div className="rounded-lg border bg-card p-5 shadow-xs">
-            <span className="text-xs font-medium text-muted-foreground">Active Services</span>
-            <div className="mt-3 text-3xl font-bold text-emerald-600">{activeServices}</div>
-            <p className="text-xs text-muted-foreground mt-0.5">Approved & visible to clients</p>
-          </div>
-
-          <div className="rounded-lg border bg-card p-5 shadow-xs">
-            <span className="text-xs font-medium text-muted-foreground">Pending Requests</span>
-            <div className="mt-3 text-3xl font-bold text-amber-600">{vendorPendingBookings}</div>
-            <p className="text-xs text-muted-foreground mt-0.5">Awaiting your response</p>
-          </div>
-
-          <div className="rounded-lg border bg-card p-5 shadow-xs">
-            <span className="text-xs font-medium text-muted-foreground">Accepted Bookings</span>
-            <div className="mt-3 text-3xl font-bold text-blue-600">{vendorAcceptedBookings}</div>
-            <p className="text-xs text-muted-foreground mt-0.5">Confirmed wedding events</p>
-          </div>
-
-          <div className="rounded-lg border bg-card p-5 shadow-xs sm:col-span-2">
-            <span className="text-xs font-medium text-muted-foreground">Current Subscription Plan</span>
-            <div className="mt-2 flex items-center justify-between">
-              <div>
-                <span className="text-xl font-bold text-foreground flex items-center gap-2">
-                  <ShieldCheck className="size-5 text-primary" />
-                  {vendorPremium?.isPremium ? "Premium Plan (Active)" : "Free Plan (3 Services Limit)"}
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {/* 1. Total Services */}
+            <div className="rounded-lg border bg-card p-5 shadow-xs">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-medium">Total Services</span>
+                <div className="rounded-md bg-purple-500/10 p-2 text-purple-600 dark:text-purple-400">
+                  <Sparkles className="size-4" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <span className="text-3xl font-bold tracking-tight text-foreground">
+                  {services.length}
                 </span>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {vendorPremium?.isPremium
-                    ? "Unlimited service listings & priority customer placement."
-                    : "Upgrade to Premium ($20 one-time) for unlimited service listings."}
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Published portfolio listings
                 </p>
               </div>
-              {!vendorPremium?.isPremium && (
+            </div>
+
+            {/* 2. Active Services */}
+            <div className="rounded-lg border bg-card p-5 shadow-xs">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-medium">Active Services</span>
+                <div className="rounded-md bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="size-4" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <span className="text-3xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
+                  {activeServices}
+                </span>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Approved & publicly visible
+                </p>
+              </div>
+            </div>
+
+            {/* 3. Pending Booking Requests */}
+            <div className="rounded-lg border bg-card p-5 shadow-xs">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-medium">Pending Requests</span>
+                <div className="rounded-md bg-amber-500/10 p-2 text-amber-600 dark:text-amber-400">
+                  <Clock className="size-4" />
+                </div>
+              </div>
+              <div className="mt-3 flex items-baseline gap-2">
+                <span className="text-3xl font-bold tracking-tight text-amber-600 dark:text-amber-400">
+                  {vendorPendingBookings}
+                </span>
+                {vendorPendingBookings > 0 && (
+                  <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                    Action Needed
+                  </span>
+                )}
+              </div>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Awaiting your response
+              </p>
+            </div>
+
+            {/* 4. Accepted Bookings */}
+            <div className="rounded-lg border bg-card p-5 shadow-xs">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-medium">Accepted Bookings</span>
+                <div className="rounded-md bg-blue-500/10 p-2 text-blue-600 dark:text-blue-400">
+                  <CalendarCheck className="size-4" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <span className="text-3xl font-bold tracking-tight text-blue-600 dark:text-blue-400">
+                  {vendorAcceptedBookings}
+                </span>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Confirmed wedding bookings
+                </p>
+              </div>
+            </div>
+
+            {/* 5. Current Subscription Plan */}
+            <div className="rounded-lg border bg-card p-5 shadow-xs sm:col-span-2">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-medium">Current Subscription Plan</span>
+                <div className="rounded-md bg-primary/10 p-2 text-primary">
+                  <ShieldCheck className="size-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <span className="text-xl font-bold text-foreground flex items-center gap-2">
+                    {vendorPremium?.isPremium ? (
+                      <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle2 className="size-5" />
+                        Premium Plan (Active)
+                      </span>
+                    ) : (
+                      <span className="text-foreground">
+                        Free Plan ({services.length}/3 Services Used)
+                      </span>
+                    )}
+                  </span>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {vendorPremium?.isPremium
+                      ? "Unlimited service listings & priority customer placement."
+                      : "Upgrade to Premium ($20 one-time) to unlock unlimited service listings."}
+                  </p>
+                </div>
                 <Link
-                  href="/premium"
-                  className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                  href="/dashboard/subscription"
+                  className={cn(
+                    "rounded-md px-3.5 py-1.5 text-xs font-medium transition-colors w-fit",
+                    vendorPremium?.isPremium
+                      ? "border border-border bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                      : "bg-primary text-primary-foreground hover:bg-primary/90"
+                  )}
                 >
-                  Upgrade
+                  {vendorPremium?.isPremium ? "Manage Plan" : "Upgrade to Premium"}
                 </Link>
-              )}
+              </div>
             </div>
           </div>
-        </div>
+
+          {/* Vendor Management Shortcuts */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Link
+              href="/dashboard/services"
+              className="group relative rounded-lg border border-border bg-card p-5 shadow-xs transition-colors hover:border-primary/50 hover:bg-secondary/40"
+            >
+              <div className="flex items-center justify-between">
+                <div className="rounded-md bg-primary/10 p-2 text-primary">
+                  <Sparkles className="size-4" />
+                </div>
+                <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+              </div>
+              <h2 className="mt-3 text-sm font-semibold text-foreground">My Services</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                View your portfolio, approval statuses, and manage availability.
+              </p>
+            </Link>
+
+            <Link
+              href="/dashboard/services/add"
+              className="group relative rounded-lg border border-border bg-card p-5 shadow-xs transition-colors hover:border-primary/50 hover:bg-secondary/40"
+            >
+              <div className="flex items-center justify-between">
+                <div className="rounded-md bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
+                  <PlusCircle className="size-4" />
+                </div>
+                <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+              </div>
+              <h2 className="mt-3 text-sm font-semibold text-foreground">Add Service</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Publish a new wedding service listing with photos and pricing.
+              </p>
+            </Link>
+
+            <Link
+              href="/dashboard/bookings"
+              className="group relative rounded-lg border border-border bg-card p-5 shadow-xs transition-colors hover:border-primary/50 hover:bg-secondary/40"
+            >
+              <div className="flex items-center justify-between">
+                <div className="rounded-md bg-amber-500/10 p-2 text-amber-600 dark:text-amber-400">
+                  <CalendarCheck className="size-4" />
+                </div>
+                <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+              </div>
+              <h2 className="mt-3 text-sm font-semibold text-foreground flex items-center gap-1.5">
+                <span>Booking Requests</span>
+                {vendorPendingBookings > 0 && (
+                  <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                    {vendorPendingBookings}
+                  </span>
+                )}
+              </h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Review incoming customer inquiries, accept, or decline reservations.
+              </p>
+            </Link>
+
+            <Link
+              href="/dashboard/subscription"
+              className="group relative rounded-lg border border-border bg-card p-5 shadow-xs transition-colors hover:border-primary/50 hover:bg-secondary/40"
+            >
+              <div className="flex items-center justify-between">
+                <div className="rounded-md bg-purple-500/10 p-2 text-purple-600 dark:text-purple-400">
+                  <ShieldCheck className="size-4" />
+                </div>
+                <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+              </div>
+              <h2 className="mt-3 text-sm font-semibold text-foreground">Subscription</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Manage your vendor subscription tier and review unlimited service perks.
+              </p>
+            </Link>
+          </div>
+        </>
       )}
 
       {/* CUSTOMER OVERVIEW (4 Metrics as specified in Assignment 9) */}

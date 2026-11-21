@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { Plus, Sparkles, Store, Clock, CheckCircle2, XCircle } from "lucide-react";
 import {
@@ -37,6 +38,16 @@ export default async function DashboardServicesPage({ searchParams }: PageProps)
   });
   const sessionUser = session?.user;
 
+  if (!sessionUser) {
+    redirect("/sign-in?redirect=/dashboard/services");
+  }
+
+  const role =
+    (sessionUser as { role?: string } | undefined)?.role ?? "customer";
+  if (role === "customer") {
+    redirect("/dashboard");
+  }
+
   let services: Service[] = [];
   let users: UserSummary[] = [];
 
@@ -56,8 +67,6 @@ export default async function DashboardServicesPage({ searchParams }: PageProps)
     console.error("Error fetching services:", err);
   }
 
-  const role =
-    (sessionUser as { role?: string } | undefined)?.role ?? "customer";
   const isAdmin = role === "admin";
   const isVendor = role === "vendor";
 
@@ -304,6 +313,12 @@ export default async function DashboardServicesPage({ searchParams }: PageProps)
                             currentStatus={currentStatus}
                           />
                         )}
+                        <Link
+                          href={`/dashboard/services/${service._id}`}
+                          className="inline-flex items-center gap-1 rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+                        >
+                          Edit
+                        </Link>
                         <DeleteServiceButton id={service._id} />
                       </div>
                     </TableCell>

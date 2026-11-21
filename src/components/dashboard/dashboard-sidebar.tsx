@@ -14,48 +14,99 @@ import {
   Store,
   HeartHandshake,
   CircleDollarSign,
+  PlusCircle,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/lib/auth-client";
 
-export const commonNavigationItems = [
-  {
-    name: "Overview",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-    exact: true,
-  },
-  {
-    name: "Bookings",
-    href: "/dashboard/bookings",
-    icon: CalendarCheck,
-    exact: false,
-  },
-  {
-    name: "Bookmarks",
-    href: "/dashboard/bookmarks",
-    icon: Bookmark,
-    exact: false,
-  },
-  {
-    name: "Profile",
-    href: "/dashboard/profile",
-    icon: User,
-    exact: false,
-  },
-];
+export const getNavigationItemsForRole = (role?: string) => {
+  if (role === "vendor") {
+    return [
+      {
+        name: "Overview",
+        href: "/dashboard",
+        icon: LayoutDashboard,
+        exact: true,
+      },
+      {
+        name: "My Services",
+        href: "/dashboard/services",
+        icon: Sparkles,
+        exact: true,
+      },
+      {
+        name: "Add Service",
+        href: "/dashboard/services/add",
+        icon: PlusCircle,
+        exact: false,
+      },
+      {
+        name: "Booking Requests",
+        href: "/dashboard/bookings",
+        icon: CalendarCheck,
+        exact: false,
+      },
+      {
+        name: "Subscription",
+        href: "/dashboard/subscription",
+        icon: ShieldCheck,
+        exact: false,
+      },
+      {
+        name: "Profile Settings",
+        href: "/dashboard/profile",
+        icon: User,
+        exact: false,
+      },
+    ];
+  }
 
-export const menuItemByRole = {
-  admin: [
+  if (role === "customer") {
+    return [
+      {
+        name: "Overview",
+        href: "/dashboard",
+        icon: LayoutDashboard,
+        exact: true,
+      },
+      {
+        name: "My Bookings",
+        href: "/dashboard/bookings",
+        icon: CalendarCheck,
+        exact: false,
+      },
+      {
+        name: "Saved Bookmarks",
+        href: "/dashboard/bookmarks",
+        icon: Bookmark,
+        exact: false,
+      },
+      {
+        name: "Profile Settings",
+        href: "/dashboard/profile",
+        icon: User,
+        exact: false,
+      },
+    ];
+  }
+
+  // Admin (default)
+  return [
     {
-      name: "Users",
+      name: "Overview",
+      href: "/dashboard",
+      icon: LayoutDashboard,
+      exact: true,
+    },
+    {
+      name: "Manage Users",
       href: "/dashboard/users",
       icon: Users,
       exact: false,
     },
     {
-      name: "Services",
+      name: "Manage Services",
       href: "/dashboard/services",
       icon: Sparkles,
       exact: false,
@@ -66,16 +117,26 @@ export const menuItemByRole = {
       icon: CircleDollarSign,
       exact: false,
     },
-  ],
-  customer: [],
-  vendor: [
     {
-      name: "Services",
-      href: "/dashboard/services",
-      icon: Sparkles,
+      name: "All Bookings",
+      href: "/dashboard/bookings",
+      icon: CalendarCheck,
       exact: false,
     },
-  ],
+    {
+      name: "Profile Settings",
+      href: "/dashboard/profile",
+      icon: User,
+      exact: false,
+    },
+  ];
+};
+
+export const commonNavigationItems = getNavigationItemsForRole("customer");
+export const menuItemByRole = {
+  admin: getNavigationItemsForRole("admin"),
+  vendor: getNavigationItemsForRole("vendor"),
+  customer: getNavigationItemsForRole("customer"),
 };
 
 function getInitials(name?: string, email?: string): string {
@@ -101,20 +162,9 @@ export function NavigationContent({
   const pathname = usePathname();
 
   const user = session?.user;
-  const role = (user as { role?: string } | undefined)?.role as
-    | keyof typeof menuItemByRole
-    | undefined;
+  const role = (user as { role?: string } | undefined)?.role;
 
-  const roleItems =
-    role && role in menuItemByRole
-      ? menuItemByRole[role]
-      : menuItemByRole.admin;
-
-  const navigationItems = [
-    commonNavigationItems[0],
-    ...roleItems,
-    ...commonNavigationItems.slice(1),
-  ];
+  const navigationItems = getNavigationItemsForRole(role);
 
   const roleBadgeConfig = {
     admin: { label: "Admin Portal", icon: ShieldCheck },
@@ -124,7 +174,7 @@ export function NavigationContent({
 
   const currentRoleConfig =
     role && role in roleBadgeConfig
-      ? roleBadgeConfig[role]
+      ? roleBadgeConfig[role as keyof typeof roleBadgeConfig]
       : { label: "Dashboard", icon: LayoutDashboard };
 
   const RoleIcon = currentRoleConfig.icon;

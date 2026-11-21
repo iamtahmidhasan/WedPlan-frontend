@@ -7,6 +7,7 @@ const roleRoutes: Record<string, string[]> = {
   "/dashboard/services": ["admin", "vendor"],
   "/dashboard/transactions": ["admin"],
   "/dashboard/bookmarks": ["customer"],
+  "/dashboard/subscription": ["vendor", "admin"],
 };
 
 export async function proxy(request: NextRequest) {
