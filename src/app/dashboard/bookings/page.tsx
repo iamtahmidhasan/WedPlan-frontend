@@ -13,7 +13,8 @@ import { ClickableTableRow } from "@/components/dashboard/clickable-table-row";
 import { type Service } from "@/components/services/service-card";
 import { DeleteBookingButton } from "@/components/bookings/delete-booking-button";
 import { UpdateBookingStatusButton } from "@/components/bookings/update-booking-status-button";
-import { cn } from "@/lib/utils";
+import { CancelBookingButton } from "@/components/bookings/cancel-booking-button";
+import { VendorBookingActions } from "@/components/bookings/vendor-booking-actions";
 import { apiFetch } from "@/lib/core/server";
 import { auth } from "@/lib/auth";
 
@@ -52,12 +53,8 @@ export default async function DashboardBookingsPage() {
   try {
     const [bookingsRes, servicesRes, usersRes] = await Promise.all([
       apiFetch(`/bookings`, { cache: "no-store" }),
-      apiFetch(`/services`, { cache: "no-store" }).catch(
-        () => null,
-      ),
-      apiFetch(`/users`, { cache: "no-store" }).catch(
-        () => null,
-      ),
+      apiFetch(`/services`, { cache: "no-store" }).catch(() => null),
+      apiFetch(`/users`, { cache: "no-store" }).catch(() => null),
     ]);
 
     if (bookingsRes.ok) {
@@ -91,17 +88,17 @@ export default async function DashboardBookingsPage() {
     "customer"
   ).toLowerCase();
 
-  // Role-based permissions
-  const showCustomerColumn = role !== "customer";
-  const canDelete = role === "admin";
+  const isCustomer = role === "customer";
+  const isVendor = role === "vendor";
+  const isAdmin = role === "admin";
 
-  // Role-based filtering of bookings:
-  // - Customer: only see their own bookings
-  // - Vendor: only see bookings for their services
-  // - Admin: see all bookings
+  const showCustomerColumn = !isCustomer;
+  const canDelete = isAdmin;
+
+  // Role-based filtering of bookings
   let visibleBookings = bookings;
 
-  if (role === "customer") {
+  if (isCustomer) {
     visibleBookings = bookings.filter((b) => {
       const isCustomerIdMatch =
         (currentUserId && b.customerId === currentUserId) ||
@@ -114,7 +111,7 @@ export default async function DashboardBookingsPage() {
 
       return isCustomerIdMatch || isCustomerEmailMatch;
     });
-  } else if (role === "vendor") {
+  } else if (isVendor) {
     const vendorServiceIdSet = new Set(
       services
         .filter(
@@ -139,20 +136,20 @@ export default async function DashboardBookingsPage() {
 
       return matchesVendorId || matchesService;
     });
-  } else if (role === "admin") {
-    visibleBookings = bookings;
   }
 
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold">Bookings</h1>
+        <h1 className="text-2xl font-bold">
+          {isCustomer ? "My Bookings" : isVendor ? "Booking Requests" : "Platform Bookings"}
+        </h1>
         <p className="text-sm text-muted-foreground">
-          {role === "customer"
-            ? "Your wedding event booking requests and reservations."
-            : role === "vendor"
-            ? "Bookings and reservations for your services."
-            : "All wedding event booking requests and customer reservations."}
+          {isCustomer
+            ? "Track your wedding event inquiries, vendor responses, and reservations."
+            : isVendor
+            ? "Review, accept, or reject incoming customer booking inquiries."
+            : "All wedding event booking requests across the platform."}
         </p>
       </div>
 
@@ -174,36 +171,37 @@ export default async function DashboardBookingsPage() {
               <TableRow>
                 <TableCell
                   colSpan={showCustomerColumn ? 7 : 6}
-                  className="h-24 text-center text-muted-foreground"
+                  className="h-28 text-center text-muted-foreground"
                 >
-                  No bookings found.
+                  {isCustomer
+                    ? "You haven't submitted any booking requests yet. Browse services to request reservations."
+                    : isVendor
+                    ? "No booking requests received yet for your services."
+                    : "No bookings found on the platform."}
                 </TableCell>
               </TableRow>
             ) : (
               visibleBookings.map((booking) => {
                 const bookingId = booking._id;
-                const service = services.find(
-                  (s) => s._id === booking.serviceId,
-                );
+                const service = services.find((s) => s._id === booking.serviceId);
                 const coverImage = service?.images?.[0];
                 const customer = users.find(
-                  (u) =>
-                    u._id === booking.customerId || u.id === booking.customerId,
+                  (u) => u._id === booking.customerId || u.id === booking.customerId,
                 );
                 const customerDisplay =
                   customer?.name ||
                   customer?.email ||
-                  booking.customerId ||
-                  "N/A";
+                  booking.customerEmail ||
+                  "Customer";
 
-                const status = (booking.status || "pending").toLowerCase();
+                const rawStatus = (booking.status || "pending").toLowerCase();
+                const status = rawStatus === "confirmed" ? "accepted" : rawStatus;
+                const isPending = status === "pending";
 
                 return (
                   <ClickableTableRow
                     key={bookingId}
-                    href={
-                      booking._id ? `/dashboard/bookings/${booking._id}` : "#"
-                    }
+                    href={booking._id ? `/dashboard/bookings/${booking._id}` : "#"}
                   >
                     {/* Service Info */}
                     <TableCell>
@@ -225,16 +223,10 @@ export default async function DashboardBookingsPage() {
                         </div>
                         <div className="flex flex-col">
                           <Link
-                            href={
-                              booking._id
-                                ? `/dashboard/bookings/${booking._id}`
-                                : "#"
-                            }
+                            href={booking._id ? `/dashboard/bookings/${booking._id}` : "#"}
                             className="font-medium text-foreground hover:underline"
                           >
-                            {service?.serviceName ||
-                              booking.serviceId ||
-                              "Unknown"}
+                            {service?.serviceName || booking.serviceId || "Wedding Service"}
                           </Link>
                           {service?.category && (
                             <span className="text-[11px] capitalize text-muted-foreground">
@@ -245,7 +237,7 @@ export default async function DashboardBookingsPage() {
                       </div>
                     </TableCell>
 
-                    {/* Customer (Hidden for customer role) */}
+                    {/* Customer Info (Hidden for customer view) */}
                     {showCustomerColumn && (
                       <TableCell>
                         <div className="flex flex-col">
@@ -263,65 +255,69 @@ export default async function DashboardBookingsPage() {
 
                     {/* Event Date */}
                     <TableCell className="font-medium">
-                      {booking.eventDate || "N/A"}
+                      {booking.eventDate || "TBD"}
                     </TableCell>
 
                     {/* Location */}
                     <TableCell className="text-muted-foreground">
-                      {booking.eventLocation || "N/A"}
+                      {booking.eventLocation || "TBD"}
                     </TableCell>
 
                     {/* Message */}
                     <TableCell className="max-w-[180px]">
                       <p
                         className="truncate text-xs text-muted-foreground"
-                        title={booking.message || "No notes"}
+                        title={booking.message || "No message provided"}
                       >
                         {booking.message || "—"}
                       </p>
                     </TableCell>
 
-                    {/* Status Update Badge Button */}
+                    {/* Status Badge */}
                     <TableCell>
-                      {booking._id ? (
+                      {booking._id && (
                         <UpdateBookingStatusButton
                           id={booking._id}
-                          currentStatus={booking.status}
+                          currentStatus={status}
                           variant="badge"
                           role={role}
                         />
-                      ) : (
-                        <span
-                          className={cn(
-                            "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize",
-                            status === "confirmed" &&
-                              "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-                            status === "cancelled" &&
-                              "bg-destructive/15 text-destructive",
-                            status !== "confirmed" &&
-                              status !== "cancelled" &&
-                              "bg-amber-500/15 text-amber-600 dark:text-amber-400",
-                          )}
-                        >
-                          {status}
-                        </span>
                       )}
                     </TableCell>
 
-                    {/* Actions */}
+                    {/* Actions Column */}
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        {canDelete && booking._id ? (
+                        {/* Customer Cancel Button (Only if pending) */}
+                        {isCustomer && booking._id && isPending && (
+                          <CancelBookingButton
+                            id={booking._id}
+                            serviceName={service?.serviceName}
+                          />
+                        )}
+
+                        {/* Vendor Accept / Reject Buttons (Only if pending) */}
+                        {isVendor && booking._id && isPending && (
+                          <VendorBookingActions
+                            id={booking._id}
+                            serviceName={service?.serviceName}
+                            customerName={customerDisplay}
+                          />
+                        )}
+
+                        {/* Admin Delete Action */}
+                        {canDelete && booking._id && (
                           <DeleteBookingButton id={booking._id} />
-                        ) : (
-                          booking._id && (
-                            <Link
-                              href={`/dashboard/bookings/${booking._id}`}
-                              className="inline-flex items-center gap-1 rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
-                            >
-                              Details
-                            </Link>
-                          )
+                        )}
+
+                        {/* Details Link */}
+                        {booking._id && (
+                          <Link
+                            href={`/dashboard/bookings/${booking._id}`}
+                            className="inline-flex items-center gap-1 rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+                          >
+                            Details
+                          </Link>
                         )}
                       </div>
                     </TableCell>

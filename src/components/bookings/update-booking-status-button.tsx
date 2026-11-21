@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Loader2, RefreshCw } from "lucide-react";
+import { ChevronDown, Loader2, CheckCircle2, Clock, XCircle, Ban } from "lucide-react";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -22,8 +22,9 @@ interface UpdateBookingStatusButtonProps {
 
 const STATUS_OPTIONS = [
   { value: "pending", label: "Pending", color: "bg-amber-500" },
-  { value: "confirmed", label: "Confirmed", color: "bg-emerald-500" },
-  { value: "cancelled", label: "Cancelled", color: "bg-destructive" },
+  { value: "accepted", label: "Accepted", color: "bg-emerald-500" },
+  { value: "rejected", label: "Rejected", color: "bg-rose-500" },
+  { value: "cancelled", label: "Cancelled", color: "bg-muted-foreground" },
 ] as const;
 
 export function UpdateBookingStatusButton({
@@ -34,8 +35,12 @@ export function UpdateBookingStatusButton({
 }: UpdateBookingStatusButtonProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const status = currentStatus.toLowerCase();
+  const rawStatus = (currentStatus || "pending").toLowerCase();
+  const status = rawStatus === "confirmed" ? "accepted" : rawStatus;
+
   const isCustomer = role?.toLowerCase() === "customer";
+  const isVendor = role?.toLowerCase() === "vendor";
+  const isAdmin = role?.toLowerCase() === "admin";
 
   async function handleUpdateStatus(newStatus: string) {
     if (newStatus === status) return;
@@ -48,7 +53,10 @@ export function UpdateBookingStatusButton({
         body: JSON.stringify({ status: newStatus }),
       });
 
-      if (!res.ok) throw new Error("Failed to update status");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        throw new Error(errorData?.message || "Failed to update status");
+      }
 
       toast.success(
         `Booking status updated to ${newStatus.charAt(0).toUpperCase() + newStatus.slice(1)}`
@@ -56,91 +64,78 @@ export function UpdateBookingStatusButton({
       router.refresh();
     } catch (err) {
       console.error("Error updating status:", err);
-      toast.error("Failed to update booking status");
+      toast.error(err instanceof Error ? err.message : "Failed to update booking status");
     } finally {
       setLoading(false);
     }
   }
 
-  // If customer and status is not pending, render as static non-clickable badge
-  if (isCustomer && status !== "pending") {
+  // Render static status badge
+  const renderBadgeContent = () => {
     return (
       <span
         className={cn(
           "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize",
-          status === "confirmed" &&
-            "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+          status === "accepted" &&
+            "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
+          status === "pending" &&
+            "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20",
+          status === "rejected" &&
+            "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/20",
           status === "cancelled" &&
-            "bg-destructive/15 text-destructive",
-          status !== "confirmed" &&
-            status !== "cancelled" &&
-            "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+            "bg-muted text-muted-foreground border border-border"
         )}
       >
-        <span
-          className={cn(
-            "size-1.5 rounded-full",
-            status === "confirmed" && "bg-emerald-500",
-            status === "cancelled" && "bg-destructive",
-            status !== "confirmed" && status !== "cancelled" && "bg-amber-500"
-          )}
-        />
+        {status === "accepted" && <CheckCircle2 className="size-3" />}
+        {status === "pending" && <Clock className="size-3" />}
+        {status === "rejected" && <XCircle className="size-3" />}
+        {status === "cancelled" && <Ban className="size-3" />}
         <span>{status}</span>
       </span>
     );
+  };
+
+  // If explicitly badge variant, or if Customer, or if non-pending and non-admin: static badge
+  if (variant === "badge" || isCustomer || (!isAdmin && status !== "pending")) {
+    return renderBadgeContent();
   }
 
-  const availableOptions = isCustomer
-    ? STATUS_OPTIONS.filter((opt) => opt.value === "pending" || opt.value === "cancelled")
+  const availableOptions = isVendor
+    ? STATUS_OPTIONS.filter((opt) => opt.value === "accepted" || opt.value === "rejected")
     : STATUS_OPTIONS;
 
   return (
     <DropdownMenu>
-      {variant === "badge" ? (
-        <DropdownMenuTrigger
-          disabled={loading}
-          className={cn(
-            "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
-            status === "confirmed" &&
-              "bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25 dark:text-emerald-400",
-            status === "cancelled" &&
-              "bg-destructive/15 text-destructive hover:bg-destructive/25",
-            status !== "confirmed" &&
-              status !== "cancelled" &&
-              "bg-amber-500/15 text-amber-600 hover:bg-amber-500/25 dark:text-amber-400"
-          )}
-        >
-          {loading ? (
-            <Loader2 className="size-3 animate-spin" />
-          ) : (
-            <span
-              className={cn(
-                "size-1.5 rounded-full",
-                status === "confirmed" && "bg-emerald-500",
-                status === "cancelled" && "bg-destructive",
-                status !== "confirmed" && status !== "cancelled" && "bg-amber-500"
-              )}
-            />
-          )}
-          <span>{status}</span>
-          <ChevronDown className="size-3 opacity-60" />
-        </DropdownMenuTrigger>
-      ) : (
-        <DropdownMenuTrigger
-          disabled={loading}
-          className="inline-flex items-center gap-1 rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary cursor-pointer disabled:opacity-50 outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        >
-          {loading ? (
-            <Loader2 className="size-3 animate-spin" />
-          ) : (
-            <RefreshCw className="size-3" />
-          )}
-          <span>Status</span>
-          <ChevronDown className="size-3 opacity-60" />
-        </DropdownMenuTrigger>
-      )}
+      <DropdownMenuTrigger
+        disabled={loading}
+        onClick={(e) => e.stopPropagation()}
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
+          status === "accepted" &&
+            "bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25 dark:text-emerald-400",
+          status === "pending" &&
+            "bg-amber-500/15 text-amber-600 hover:bg-amber-500/25 dark:text-amber-400",
+          status === "rejected" &&
+            "bg-rose-500/15 text-rose-600 hover:bg-rose-500/25 dark:text-rose-400",
+          status === "cancelled" &&
+            "bg-muted text-muted-foreground hover:bg-muted/80"
+        )}
+      >
+        {loading ? (
+          <Loader2 className="size-3 animate-spin" />
+        ) : (
+          <>
+            {status === "accepted" && <CheckCircle2 className="size-3" />}
+            {status === "pending" && <Clock className="size-3" />}
+            {status === "rejected" && <XCircle className="size-3" />}
+            {status === "cancelled" && <Ban className="size-3" />}
+          </>
+        )}
+        <span>{status}</span>
+        <ChevronDown className="size-3 opacity-60" />
+      </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="min-w-36">
+      <DropdownMenuContent align="end" className="min-w-36" onClick={(e) => e.stopPropagation()}>
         {availableOptions.map((opt) => (
           <DropdownMenuItem
             key={opt.value}

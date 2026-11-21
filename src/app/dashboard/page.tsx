@@ -9,6 +9,11 @@ import {
   CircleDollarSign,
   ArrowRight,
   ShieldCheck,
+  CalendarDays,
+  CheckCircle2,
+  XCircle,
+  Compass,
+  User,
 } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { apiFetch } from "@/lib/core/server";
@@ -107,9 +112,8 @@ export default async function DashboardPage() {
   const customerTotalRequests = bookings.length;
   const customerPendingBookings = bookings.filter((b) => (b.status ?? "pending") === "pending").length;
   const customerAcceptedBookings = bookings.filter((b) => b.status === "accepted").length;
-  const customerRejectedBookings = bookings.filter(
-    (b) => b.status === "rejected" || b.status === "cancelled",
-  ).length;
+  const customerRejectedBookings = bookings.filter((b) => b.status === "rejected").length;
+  const customerCancelledBookings = bookings.filter((b) => b.status === "cancelled").length;
 
   return (
     <div className="space-y-8">
@@ -351,33 +355,137 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* CUSTOMER OVERVIEW */}
+      {/* CUSTOMER OVERVIEW (4 Metrics as specified in Assignment 9) */}
       {!isAdmin && !isVendor && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-lg border bg-card p-5 shadow-xs">
-            <span className="text-xs font-medium text-muted-foreground">Total Booking Requests</span>
-            <div className="mt-3 text-3xl font-bold">{customerTotalRequests}</div>
-            <p className="text-xs text-muted-foreground mt-0.5">Submitted inquiries</p>
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {/* 1. Total Booking Requests */}
+            <div className="rounded-lg border bg-card p-5 shadow-xs">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-medium">Total Booking Requests</span>
+                <div className="rounded-md bg-primary/10 p-2 text-primary">
+                  <CalendarDays className="size-4" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <span className="text-3xl font-bold tracking-tight text-foreground">
+                  {customerTotalRequests}
+                </span>
+                <p className="mt-0.5 text-xs text-muted-foreground">All submitted inquiries</p>
+              </div>
+            </div>
+
+            {/* 2. Pending Booking Requests */}
+            <div className="rounded-lg border bg-card p-5 shadow-xs">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-medium">Pending Booking Requests</span>
+                <div className="rounded-md bg-amber-500/10 p-2 text-amber-600 dark:text-amber-400">
+                  <Clock className="size-4" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <span className="text-3xl font-bold tracking-tight text-amber-600 dark:text-amber-400">
+                  {customerPendingBookings}
+                </span>
+                <p className="mt-0.5 text-xs text-muted-foreground">Awaiting vendor review</p>
+              </div>
+            </div>
+
+            {/* 3. Accepted Bookings */}
+            <div className="rounded-lg border bg-card p-5 shadow-xs">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-medium">Accepted Bookings</span>
+                <div className="rounded-md bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="size-4" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <span className="text-3xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
+                  {customerAcceptedBookings}
+                </span>
+                <p className="mt-0.5 text-xs text-muted-foreground">Confirmed reservations</p>
+              </div>
+            </div>
+
+            {/* 4. Rejected Bookings */}
+            <div className="rounded-lg border bg-card p-5 shadow-xs">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-medium">Rejected Bookings</span>
+                <div className="rounded-md bg-destructive/10 p-2 text-destructive">
+                  <XCircle className="size-4" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <span className="text-3xl font-bold tracking-tight text-destructive">
+                  {customerRejectedBookings}
+                </span>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {customerCancelledBookings > 0
+                    ? `Declined (${customerCancelledBookings} cancelled by you)`
+                    : "Declined by vendor"}
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="rounded-lg border bg-card p-5 shadow-xs">
-            <span className="text-xs font-medium text-muted-foreground">Pending Requests</span>
-            <div className="mt-3 text-3xl font-bold text-amber-600">{customerPendingBookings}</div>
-            <p className="text-xs text-muted-foreground mt-0.5">Awaiting vendor review</p>
-          </div>
+          {/* Customer Navigation Shortcuts */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Link
+              href="/dashboard/bookings"
+              className="group relative rounded-lg border border-border bg-card p-6 shadow-xs transition-colors hover:border-primary/50 hover:bg-secondary/40"
+            >
+              <div className="flex items-center justify-between">
+                <div className="rounded-md bg-primary/10 p-2.5 text-primary">
+                  <CalendarDays className="size-5" />
+                </div>
+                <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+              </div>
+              <h2 className="mt-4 font-semibold text-foreground flex items-center gap-2">
+                <span>My Bookings</span>
+                {customerPendingBookings > 0 && (
+                  <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                    {customerPendingBookings} Pending
+                  </span>
+                )}
+              </h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Track status of your wedding requests, view details, or cancel pending requests.
+              </p>
+            </Link>
 
-          <div className="rounded-lg border bg-card p-5 shadow-xs">
-            <span className="text-xs font-medium text-muted-foreground">Accepted Bookings</span>
-            <div className="mt-3 text-3xl font-bold text-emerald-600">{customerAcceptedBookings}</div>
-            <p className="text-xs text-muted-foreground mt-0.5">Confirmed reservations</p>
-          </div>
+            <Link
+              href="/services"
+              className="group relative rounded-lg border border-border bg-card p-6 shadow-xs transition-colors hover:border-primary/50 hover:bg-secondary/40"
+            >
+              <div className="flex items-center justify-between">
+                <div className="rounded-md bg-primary/10 p-2.5 text-primary">
+                  <Compass className="size-5" />
+                </div>
+                <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+              </div>
+              <h2 className="mt-4 font-semibold text-foreground">Explore Services</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Discover photography, venues, catering, decoration, and beauty stylists for your wedding.
+              </p>
+            </Link>
 
-          <div className="rounded-lg border bg-card p-5 shadow-xs">
-            <span className="text-xs font-medium text-muted-foreground">Rejected / Cancelled</span>
-            <div className="mt-3 text-3xl font-bold text-muted-foreground">{customerRejectedBookings}</div>
-            <p className="text-xs text-muted-foreground mt-0.5">Inactive requests</p>
+            <Link
+              href="/dashboard/profile"
+              className="group relative rounded-lg border border-border bg-card p-6 shadow-xs transition-colors hover:border-primary/50 hover:bg-secondary/40"
+            >
+              <div className="flex items-center justify-between">
+                <div className="rounded-md bg-primary/10 p-2.5 text-primary">
+                  <User className="size-5" />
+                </div>
+                <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+              </div>
+              <h2 className="mt-4 font-semibold text-foreground">Profile Settings</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Manage your name, wedding contact details, and account preferences.
+              </p>
+            </Link>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
