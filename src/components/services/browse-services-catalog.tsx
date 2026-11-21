@@ -360,11 +360,10 @@ export function BrowseServicesCatalog({
             isPending && "opacity-60",
           )}
         >
-          {services.map((service, index) => (
+          {services.map((service) => (
             <ServiceCard
               key={service._id}
               service={service}
-              featured={index === 0 && !hasActiveFilters}
               vendorName={vendorMap.get(service.vendorId)}
             />
           ))}

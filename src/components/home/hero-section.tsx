@@ -1,6 +1,9 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Sparkles } from "lucide-react";
+import { motion } from "motion/react";
 
 const heroImages = [
   {
@@ -17,13 +20,20 @@ export function HeroSection() {
   const [venueImage, receptionImage] = heroImages;
 
   return (
-    <section className="relative overflow-hidden border-b border-border bg-secondary">
-      <div className="mx-auto grid w-full max-w-7xl gap-12 px-6 py-16 sm:px-10 lg:min-h-[calc(100svh-4rem)] lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-center lg:gap-20 lg:py-24">
-        <div className="relative z-10">
+    <section className="relative overflow-hidden border-b border-border bg-secondary/50">
+      <div className="mx-auto grid w-full max-w-7xl gap-12 px-6 py-16 sm:px-10 lg:min-h-[calc(100svh-4rem)] lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center lg:gap-20 lg:py-24">
+        {/* Left Column Text Content */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="relative z-10"
+        >
           <div className="flex items-center gap-3">
             <span className="h-px w-8 bg-primary" aria-hidden="true" />
-            <p className="text-xs uppercase tracking-[0.24em] text-primary">
-              Wedding planning, softly done
+            <p className="text-xs uppercase tracking-[0.24em] text-primary font-semibold flex items-center gap-1.5">
+              <Sparkles className="size-3.5" />
+              <span>Wedding planning, softly done</span>
             </p>
           </div>
 
@@ -42,33 +52,44 @@ export function HeroSection() {
           <div className="mt-10 flex flex-wrap items-center gap-3">
             <Link
               href="/services"
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground outline-none transition-colors hover:bg-primary/80 focus-visible:ring-2 focus-visible:ring-ring"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground outline-none transition-all hover:bg-primary/90 hover:shadow-xs focus-visible:ring-2 focus-visible:ring-ring"
             >
-              Explore services
+              Explore Wedding Services
               <ArrowUpRight className="size-4" aria-hidden="true" />
             </Link>
             <Link
               href="/sign-up"
-              className="inline-flex h-11 items-center justify-center rounded-md border border-border px-5 text-sm font-medium text-foreground outline-none transition-colors hover:bg-background focus-visible:ring-2 focus-visible:ring-ring"
+              className="inline-flex h-11 items-center justify-center rounded-md border border-border bg-background px-5 text-sm font-medium text-foreground outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring"
             >
-              Start planning
+              Start Planning
             </Link>
           </div>
 
           <div className="mt-12 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border pt-5 text-xs uppercase tracking-[0.16em] text-muted-foreground">
             <span>Venues</span>
+            <span className="size-1 rounded-full bg-border" />
             <span>Photography</span>
+            <span className="size-1 rounded-full bg-border" />
             <span>Catering</span>
+            <span className="size-1 rounded-full bg-border" />
             <span>Florals</span>
+            <span className="size-1 rounded-full bg-border" />
+            <span>Fashion</span>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="relative mt-4 h-80 sm:mt-0 sm:h-[30rem] lg:h-[34rem]">
+        {/* Right Column Visual Images */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+          className="relative mt-4 h-80 sm:mt-0 sm:h-[30rem] lg:h-[34rem]"
+        >
           <div
             className="absolute right-0 top-0 size-48 rounded-full border border-primary/30 sm:right-6 sm:size-64 lg:size-80"
             aria-hidden="true"
           />
-          <div className="absolute left-0 top-2 h-[80%] w-[68%] overflow-hidden border border-border bg-background sm:top-6 sm:h-[78%] sm:w-[66%]">
+          <div className="absolute left-0 top-2 h-[80%] w-[68%] overflow-hidden border border-border bg-background shadow-sm rounded-lg sm:top-6 sm:h-[78%] sm:w-[66%]">
             <Image
               src={venueImage.src}
               alt={venueImage.alt}
@@ -78,7 +99,7 @@ export function HeroSection() {
               className="object-cover"
             />
           </div>
-          <div className="absolute bottom-0 right-0 h-[66%] w-[62%] overflow-hidden border border-border bg-background">
+          <div className="absolute bottom-0 right-0 h-[66%] w-[62%] overflow-hidden border border-border bg-background shadow-md rounded-lg">
             <Image
               src={receptionImage.src}
               alt={receptionImage.alt}
@@ -87,7 +108,7 @@ export function HeroSection() {
               className="object-cover"
             />
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
