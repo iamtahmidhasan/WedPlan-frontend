@@ -287,7 +287,7 @@ export function Footer({ categories = [] }: { categories?: string[] }) {
 
           <div className="flex items-center gap-6 text-xs text-muted-foreground">
             <Link
-              href="/"
+              href="/privacy"
               className="transition-colors hover:text-foreground"
             >
               Privacy Policy
