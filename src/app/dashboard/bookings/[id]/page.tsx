@@ -9,6 +9,7 @@ import {
   EditBookingForm,
   type UserSummary,
 } from "@/components/bookings/EditBookingForm";
+import { CustomerReviewForm } from "@/components/reviews/customer-review-form";
 
 async function getBookingPageData(id: string) {
   const [bookingRes, servicesRes, usersRes] = await Promise.all([
@@ -121,6 +122,16 @@ export default async function EditBookingPage({
         customer={data.customer}
         role={role}
       />
+
+      {/* If completed, Customer can leave a review */}
+      {role === "customer" && (data.booking.status || "").toLowerCase() === "completed" && (
+        <div className="pt-2">
+          <CustomerReviewForm
+            serviceId={data.booking.serviceId}
+            serviceName={data.service?.serviceName}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, MapPin } from "lucide-react";
+import { ArrowLeft, MapPin, Star, MessageSquareQuote } from "lucide-react";
 import { connection } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
@@ -40,14 +40,17 @@ export default async function ServiceDetailsPage({
     redirect(`/sign-in?redirect=/services/${id}`);
   }
 
-  const [response, bookingsRes] = await Promise.all([
+  const [response, bookingsRes, reviewsRes] = await Promise.all([
     apiFetch(`/services?id=${id}`),
     apiFetch(`/bookings`, { cache: "no-store" }).catch(() => null),
+    apiFetch(`/reviews/${id}`, { cache: "no-store" }).catch(() => null),
   ]);
 
   if (!response.ok) notFound();
 
   const service = (await response.json()) as Service;
+  const reviews: { _id: string; rating: number; review: string; user: string; userName?: string; date: string }[] =
+    reviewsRes?.ok ? await reviewsRes.json() : [];
   const [cover, second, third] = service.images;
 
   const role = (
@@ -237,6 +240,89 @@ export default async function ServiceDetailsPage({
             )}
           </div>
         </div>
+
+        {/* Client Reviews Section */}
+        <section className="mt-20 border-t border-border pt-12">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+            <div>
+              <p className="text-xs uppercase tracking-[0.24em] text-primary font-semibold">
+                Client Testimonials
+              </p>
+              <h2 className="mt-2 font-heading text-3xl font-bold text-foreground sm:text-4xl">
+                Reviews ({reviews.length})
+              </h2>
+            </div>
+
+            {reviews.length > 0 && (
+              <div className="flex items-center gap-2 border border-border bg-card px-4 py-2 rounded-lg">
+                <Star className="size-4 fill-amber-500 text-amber-500" />
+                <span className="font-heading text-xl font-bold text-foreground">
+                  {(
+                    reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) /
+                    reviews.length
+                  ).toFixed(1)}
+                </span>
+                <span className="text-xs text-muted-foreground">/ 5.0</span>
+              </div>
+            )}
+          </div>
+
+          {reviews.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border bg-card/50 p-10 text-center">
+              <MessageSquareQuote className="size-8 mx-auto text-muted-foreground/50 mb-2" />
+              <p className="text-sm font-semibold text-foreground">No reviews yet</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Be among the first couples to share their celebration experience with this service.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {reviews.map((r) => {
+                const ratingNum = Math.max(1, Math.min(5, Number(r.rating) || 5));
+                const formattedDate = r.date
+                  ? new Date(r.date).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })
+                  : "Verified Review";
+
+                return (
+                  <div
+                    key={r._id}
+                    className="flex flex-col justify-between rounded-xl border border-border bg-card p-5 shadow-xs"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-0.5 text-amber-500">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`size-3.5 ${
+                                i < ratingNum ? "fill-amber-500 text-amber-500" : "text-muted-foreground/30"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-[11px] text-muted-foreground">{formattedDate}</span>
+                      </div>
+
+                      <p className="text-xs leading-relaxed text-foreground/90 whitespace-pre-line">
+                        &ldquo;{r.review}&rdquo;
+                      </p>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-border/60">
+                      <p className="text-xs font-semibold text-foreground truncate">
+                        {r.userName || r.user || "Verified Couple"}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
       </div>
 
       <section className="mt-20 bg-primary py-16 text-primary-foreground">

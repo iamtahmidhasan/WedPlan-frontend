@@ -49,6 +49,12 @@ export const getNavigationItemsForRole = (role?: string) => {
         exact: false,
       },
       {
+        name: "Customer Reviews",
+        href: "/dashboard/reviews",
+        icon: Sparkles,
+        exact: false,
+      },
+      {
         name: "Subscription",
         href: "/dashboard/subscription",
         icon: ShieldCheck,
@@ -128,6 +134,12 @@ export const getNavigationItemsForRole = (role?: string) => {
       name: "All Bookings",
       href: "/dashboard/bookings",
       icon: CalendarCheck,
+      exact: false,
+    },
+    {
+      name: "Manage Reviews",
+      href: "/dashboard/reviews",
+      icon: Sparkles,
       exact: false,
     },
     {
