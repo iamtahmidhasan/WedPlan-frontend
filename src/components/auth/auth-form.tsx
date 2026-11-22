@@ -151,9 +151,34 @@ export function AuthForm({ mode }: AuthFormProps) {
 
     if (result.error) {
       const message = getErrorMessage(result.error);
+      const isUnverified =
+        message.toLowerCase().includes("verify") ||
+        message.toLowerCase().includes("verification") ||
+        (result.error as { code?: string }).code === "EMAIL_NOT_VERIFIED";
+
       setErrorMessage(message);
-      toast.error(content.errorTitle, { description: message });
+      if (isUnverified) {
+        toast.error("Email not verified", {
+          description: "Please verify your email address before signing in.",
+          action: {
+            label: "Verify email",
+            onClick: () =>
+              router.push(`/verify-email?email=${encodeURIComponent(email)}`),
+          },
+        });
+      } else {
+        toast.error(content.errorTitle, { description: message });
+      }
       setIsSubmitting(false);
+      return;
+    }
+
+    if (isSignUp) {
+      toast.success("Account created successfully!", {
+        description: "Please check your inbox to verify your email address.",
+      });
+      router.replace(`/verify-email?email=${encodeURIComponent(email)}`);
+      router.refresh();
       return;
     }
 
@@ -161,22 +186,19 @@ export function AuthForm({ mode }: AuthFormProps) {
       description: content.successDescription,
     });
 
-    if (isSignUp) {
-      router.replace(signupTarget);
-      router.refresh();
-    } else {
-      // Determine user role post sign-in
-      try {
-        const sessionRes = await authClient.getSession();
+    // Determine user role post sign-in
+    authClient
+      .getSession()
+      .then((sessionRes) => {
         const userRole = (sessionRes?.data?.user as { role?: string })?.role;
         const target = getDestinationForRole(userRole, redirectParam);
         router.replace(target);
         router.refresh();
-      } catch {
+      })
+      .catch(() => {
         router.replace(redirectParam || "/dashboard");
         router.refresh();
-      }
-    }
+      });
   }
 
   async function handleGoogleSignIn() {
