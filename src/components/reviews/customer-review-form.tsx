@@ -2,23 +2,36 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Star, Send, Loader2 } from "lucide-react";
+import { Star, Send, Loader2, Edit3, CheckCircle2, X } from "lucide-react";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/core/client";
+
+export interface ExistingReview {
+  _id: string;
+  serviceId: string;
+  rating: number;
+  review: string;
+  user?: string;
+  userName?: string;
+  date?: string;
+}
 
 export function CustomerReviewForm({
   serviceId,
   serviceName,
+  initialReview,
 }: {
   serviceId: string;
   serviceName?: string;
+  initialReview?: ExistingReview | null;
 }) {
   const router = useRouter();
-  const [rating, setRating] = useState(5);
+  const [currentReview, setCurrentReview] = useState<ExistingReview | null>(initialReview || null);
+  const [isEditing, setIsEditing] = useState(!initialReview);
+  const [rating, setRating] = useState(initialReview?.rating || 5);
   const [hoverRating, setHoverRating] = useState(0);
-  const [review, setReview] = useState("");
+  const [review, setReview] = useState(initialReview?.review || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,8 +41,11 @@ export function CustomerReviewForm({
     }
 
     setIsSubmitting(true);
-    apiFetch("/reviews", {
-      method: "POST",
+    const endpoint = currentReview?._id ? `/reviews/${currentReview._id}` : "/reviews";
+    const method = currentReview?._id ? "PUT" : "POST";
+
+    apiFetch(endpoint, {
+      method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         serviceId,
@@ -43,8 +59,20 @@ export function CustomerReviewForm({
           setIsSubmitting(false);
           return;
         }
-        toast.success("Thank you! Your review has been submitted.");
-        setSubmitted(true);
+
+        const successMessage = currentReview?._id
+          ? "Your review has been updated successfully!"
+          : "Thank you! Your review has been submitted.";
+        toast.success(successMessage);
+
+        setCurrentReview({
+          _id: currentReview?._id || "updated",
+          serviceId,
+          rating,
+          review: review.trim(),
+          date: new Date().toISOString(),
+        });
+        setIsEditing(false);
         setIsSubmitting(false);
         router.refresh();
       })
@@ -54,28 +82,99 @@ export function CustomerReviewForm({
       });
   };
 
-  if (submitted) {
+  // If already reviewed and not in edit mode, display the existing review
+  if (!isEditing && currentReview) {
+    const formattedDate = currentReview.date
+      ? new Date(currentReview.date).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        })
+      : "Verified Review";
+
     return (
-      <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-5 text-center">
-        <p className="font-heading text-lg font-bold text-emerald-700 dark:text-emerald-400">
-          Review Submitted
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Thank you for sharing your experience! Your review is now visible to future couples.
-        </p>
+      <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="size-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <div>
+              <h3 className="font-heading text-lg font-bold text-foreground">
+                Your Review {serviceName ? `for ${serviceName}` : ""}
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                Submitted on {formattedDate}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setRating(currentReview.rating || 5);
+              setReview(currentReview.review || "");
+              setIsEditing(true);
+            }}
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-xs font-semibold text-foreground transition-colors hover:bg-secondary cursor-pointer shrink-0"
+          >
+            <Edit3 className="size-3.5 text-primary" />
+            <span>Edit Review</span>
+          </button>
+        </div>
+
+        {/* Rating Stars & Text */}
+        <div className="space-y-2 rounded-lg border border-border/60 bg-card p-4">
+          <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-0.5 text-amber-500">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star
+                  key={i}
+                  className={`size-4 ${
+                    i < currentReview.rating
+                      ? "fill-amber-500 text-amber-500"
+                      : "text-muted-foreground/30"
+                  }`}
+                />
+              ))}
+            </div>
+            <span className="font-mono text-xs font-bold text-foreground ml-1">
+              {currentReview.rating} / 5 Stars
+            </span>
+          </div>
+
+          <p className="text-xs leading-relaxed text-foreground whitespace-pre-line">
+            &ldquo;{currentReview.review}&rdquo;
+          </p>
+        </div>
       </div>
     );
   }
 
+  // Edit / Add Form Mode
   return (
     <div className="rounded-xl border border-border bg-card p-6 shadow-xs space-y-4">
-      <div>
-        <h3 className="font-heading text-xl font-bold text-foreground">
-          Leave a Review {serviceName ? `for ${serviceName}` : ""}
-        </h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Your wedding service is completed! Please rate your experience to help other couples plan their special day.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div>
+          <h3 className="font-heading text-xl font-bold text-foreground">
+            {currentReview ? "Edit Your Review" : "Leave a Review"}{" "}
+            {serviceName ? `for ${serviceName}` : ""}
+          </h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {currentReview
+              ? "Update your rating or celebration feedback below."
+              : "Your wedding service is completed! Please rate your experience to help other couples plan their special day."}
+          </p>
+        </div>
+
+        {currentReview && (
+          <button
+            type="button"
+            onClick={() => setIsEditing(false)}
+            className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
+          >
+            <X className="size-3.5" />
+            <span>Cancel</span>
+          </button>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -125,18 +224,31 @@ export function CustomerReviewForm({
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground transition-all hover:bg-primary/90 cursor-pointer disabled:opacity-50"
-        >
-          {isSubmitting ? (
-            <Loader2 className="size-3.5 animate-spin" />
-          ) : (
-            <Send className="size-3.5" />
+        <div className="flex items-center gap-2">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground transition-all hover:bg-primary/90 cursor-pointer disabled:opacity-50"
+          >
+            {isSubmitting ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Send className="size-3.5" />
+            )}
+            <span>{currentReview ? "Update Review" : "Submit Review"}</span>
+          </button>
+
+          {currentReview && (
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => setIsEditing(false)}
+              className="inline-flex h-9 items-center rounded-lg border border-border px-3 text-xs font-medium text-muted-foreground hover:bg-secondary hover:text-foreground cursor-pointer"
+            >
+              Cancel
+            </button>
           )}
-          <span>Submit Review</span>
-        </button>
+        </div>
       </form>
     </div>
   );

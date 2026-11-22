@@ -12,10 +12,11 @@ import {
 import { CustomerReviewForm } from "@/components/reviews/customer-review-form";
 
 async function getBookingPageData(id: string) {
-  const [bookingRes, servicesRes, usersRes] = await Promise.all([
+  const [bookingRes, servicesRes, usersRes, reviewsRes] = await Promise.all([
     apiFetch(`/bookings?id=${id}`, { cache: "no-store" }),
     apiFetch(`/services`, { cache: "no-store" }),
     apiFetch(`/users`, { cache: "no-store" }),
+    apiFetch(`/reviews`, { cache: "no-store" }),
   ]);
 
   if (!bookingRes.ok) {
@@ -25,6 +26,7 @@ async function getBookingPageData(id: string) {
   const bookingData = await bookingRes.json();
   const servicesData = await servicesRes.json();
   const usersData = await usersRes.json();
+  const reviewsData = reviewsRes.ok ? await reviewsRes.json() : [];
 
   const services: Service[] = servicesData;
   const users: UserSummary[] = usersData;
@@ -54,6 +56,7 @@ async function getBookingPageData(id: string) {
     vendor: matchedVendor,
     customer: matchedCustomer,
     users,
+    reviews: reviewsData,
   };
 }
 
@@ -123,15 +126,35 @@ export default async function EditBookingPage({
         role={role}
       />
 
-      {/* If completed, Customer can leave a review */}
-      {role === "customer" && (data.booking.status || "").toLowerCase() === "completed" && (
-        <div className="pt-2">
-          <CustomerReviewForm
-            serviceId={data.booking.serviceId}
-            serviceName={data.service?.serviceName}
-          />
-        </div>
-      )}
+      {/* If completed, Customer can leave or edit their review */}
+      {role === "customer" && (data.booking.status || "").toLowerCase() === "completed" && (() => {
+        const customerEmail = data.customer?.email || sessionUser?.email;
+        const initialReview =
+          (data.reviews as Array<{
+            _id: string;
+            serviceId: string;
+            rating: number;
+            review: string;
+            user?: string;
+            userName?: string;
+            date?: string;
+          }>).find(
+            (r) =>
+              r.serviceId === data.booking.serviceId &&
+              (r.user?.toLowerCase() === customerEmail?.toLowerCase() ||
+                r.user?.toLowerCase() === sessionUser?.email?.toLowerCase())
+          ) || null;
+
+        return (
+          <div className="pt-2">
+            <CustomerReviewForm
+              serviceId={data.booking.serviceId}
+              serviceName={data.service?.serviceName}
+              initialReview={initialReview}
+            />
+          </div>
+        );
+      })()}
     </div>
   );
 }
