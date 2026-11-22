@@ -11,6 +11,7 @@ import {
   RotateCcw,
   Sparkles,
   Layers,
+  Star,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -40,9 +41,20 @@ export interface ServiceSummary {
   images?: string[];
 }
 
+export interface ReviewSummary {
+  _id: string;
+  serviceId: string;
+  rating: number;
+  review: string;
+  user?: string;
+  userName?: string;
+  date?: string;
+}
+
 interface VendorsDirectoryProps {
   vendors: VendorUser[];
   services: ServiceSummary[];
+  reviews?: ReviewSummary[];
 }
 
 function getInitials(name?: string, email?: string): string {
@@ -58,9 +70,11 @@ function getInitials(name?: string, email?: string): string {
 export function VendorsDirectory({
   vendors,
   services,
+  reviews = [],
 }: VendorsDirectoryProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [premiumOnly, setPremiumOnly] = useState(false);
+  const [topRatedOnly, setTopRatedOnly] = useState(false);
 
   // Group services by vendorId
   const vendorServicesMap = useMemo(() => {
@@ -74,11 +88,35 @@ export function VendorsDirectory({
     return map;
   }, [services]);
 
-  // Filter vendors based on search and premium toggle
+  // Group reviews by serviceId
+  const serviceReviewsMap = useMemo(() => {
+    const map = new Map<string, ReviewSummary[]>();
+    for (const r of reviews) {
+      if (!r.serviceId) continue;
+      const existing = map.get(r.serviceId) || [];
+      existing.push(r);
+      map.set(r.serviceId, existing);
+    }
+    return map;
+  }, [reviews]);
+
+  // Filter vendors based on search, premium, and top-rated toggle
   const filteredVendors = useMemo(() => {
     return vendors.filter((vendor) => {
       if (vendor.isBlocked) return false;
       if (premiumOnly && !vendor.isPremium) return false;
+
+      const vendorId = vendor._id || vendor.id || "";
+      const vendorServices = vendorServicesMap.get(vendorId) || [];
+
+      if (topRatedOnly) {
+        const vReviews = vendorServices.flatMap((s) => serviceReviewsMap.get(s._id) || []);
+        const avg =
+          vReviews.length > 0
+            ? vReviews.reduce((sum, r) => sum + (Number(r.rating) || 5), 0) / vReviews.length
+            : 0;
+        if (avg < 4.5) return false;
+      }
 
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
@@ -86,8 +124,6 @@ export function VendorsDirectory({
         const matchesBusiness = vendor.businessName?.toLowerCase().includes(q);
         const matchesEmail = vendor.email?.toLowerCase().includes(q);
 
-        const vendorId = vendor._id || vendor.id || "";
-        const vendorServices = vendorServicesMap.get(vendorId) || [];
         const matchesService = vendorServices.some(
           (s) =>
             s.serviceName?.toLowerCase().includes(q) ||
@@ -100,7 +136,7 @@ export function VendorsDirectory({
 
       return true;
     });
-  }, [vendors, premiumOnly, searchQuery, vendorServicesMap]);
+  }, [vendors, premiumOnly, topRatedOnly, searchQuery, vendorServicesMap, serviceReviewsMap]);
 
   return (
     <div className="space-y-10">
@@ -133,6 +169,20 @@ export function VendorsDirectory({
           <div className="flex items-center gap-2 w-full sm:w-auto px-2 pb-1 sm:pb-0 shrink-0">
             <button
               type="button"
+              onClick={() => setTopRatedOnly(!topRatedOnly)}
+              className={cn(
+                "inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold transition-all cursor-pointer border",
+                topRatedOnly
+                  ? "border-amber-500/50 bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                  : "border-border bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground"
+              )}
+            >
+              <Star className={cn("size-3.5", topRatedOnly ? "fill-amber-500 text-amber-500" : "text-muted-foreground")} />
+              <span>Top Rated</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setPremiumOnly(!premiumOnly)}
               className={cn(
                 "inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold transition-all cursor-pointer border",
@@ -145,12 +195,13 @@ export function VendorsDirectory({
               <span>Verified Only</span>
             </button>
 
-            {(searchQuery || premiumOnly) && (
+            {(searchQuery || premiumOnly || topRatedOnly) && (
               <button
                 type="button"
                 onClick={() => {
                   setSearchQuery("");
                   setPremiumOnly(false);
+                  setTopRatedOnly(false);
                 }}
                 className="inline-flex h-9 items-center gap-1 rounded-xl px-2.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
                 title="Reset filters"
@@ -168,12 +219,20 @@ export function VendorsDirectory({
             Showing <span className="font-semibold text-foreground">{filteredVendors.length}</span>{" "}
             wedding {filteredVendors.length === 1 ? "vendor" : "vendors"}
           </span>
-          {premiumOnly && (
-            <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium">
-              <Sparkles className="size-3" />
-              Verified partners only
-            </span>
-          )}
+          <div className="flex items-center gap-3">
+            {topRatedOnly && (
+              <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium">
+                <Star className="size-3 fill-amber-500 text-amber-500" />
+                Top rated (4.5★+)
+              </span>
+            )}
+            {premiumOnly && (
+              <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium">
+                <Sparkles className="size-3" />
+                Verified partners only
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -189,12 +248,13 @@ export function VendorsDirectory({
           <p className="mt-2 max-w-sm text-xs leading-relaxed text-muted-foreground">
             We couldn’t find any wedding vendors matching your query. Try broadening your terms or resetting your filters.
           </p>
-          {(searchQuery || premiumOnly) && (
+          {(searchQuery || premiumOnly || topRatedOnly) && (
             <button
               type="button"
               onClick={() => {
                 setSearchQuery("");
                 setPremiumOnly(false);
+                setTopRatedOnly(false);
               }}
               className="mt-6 inline-flex h-9 items-center gap-2 rounded-xl border border-border bg-background px-4 text-xs font-semibold text-foreground hover:bg-secondary cursor-pointer"
             >
@@ -211,6 +271,13 @@ export function VendorsDirectory({
             const vendorServices = vendorServicesMap.get(vendorId) || [];
             const serviceCount = vendorServices.length;
             const displayName = vendor.businessName || vendor.name || "Wedding Vendor";
+
+            // Reviews for this vendor's services
+            const vendorReviews = vendorServices.flatMap((s) => serviceReviewsMap.get(s._id) || []);
+            const reviewCount = vendorReviews.length;
+            const avgRating = reviewCount > 0
+              ? (vendorReviews.reduce((sum, r) => sum + (Number(r.rating) || 5), 0) / reviewCount).toFixed(1)
+              : null;
 
             // Extract unique categories
             const categories = Array.from(
@@ -249,16 +316,25 @@ export function VendorsDirectory({
                       </AvatarFallback>
                     </Avatar>
 
-                    {vendor.isPremium ? (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
-                        <ShieldCheck className="size-3 text-amber-500" />
-                        <span>Verified</span>
-                      </span>
-                    ) : (
-                      <span className="rounded-full border border-border bg-secondary/50 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
-                        Partner
-                      </span>
-                    )}
+                    <div className="flex flex-col items-end gap-1.5">
+                      {vendor.isPremium ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                          <ShieldCheck className="size-3 text-amber-500" />
+                          <span>Verified</span>
+                        </span>
+                      ) : (
+                        <span className="rounded-full border border-border bg-secondary/50 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+                          Partner
+                        </span>
+                      )}
+
+                      {avgRating && (
+                        <div className="flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400">
+                          <Star className="size-3 fill-amber-500 text-amber-500" />
+                          <span>{avgRating}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Title & Name */}
@@ -273,6 +349,32 @@ export function VendorsDirectory({
                       <p className="mt-0.5 text-xs text-muted-foreground truncate">
                         Contact: {vendor.name}
                       </p>
+                    )}
+                  </div>
+
+                  {/* Rating & Reviews */}
+                  <div className="mt-2.5 flex items-center gap-1.5 text-xs">
+                    <div className="flex items-center gap-0.5 text-amber-500">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`size-3.5 ${
+                            avgRating && i < Math.round(Number(avgRating))
+                              ? "fill-amber-500 text-amber-500"
+                              : "text-muted-foreground/30"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    {avgRating ? (
+                      <span className="font-medium text-foreground">
+                        {avgRating}{" "}
+                        <span className="text-muted-foreground">
+                          ({reviewCount} {reviewCount === 1 ? "review" : "reviews"})
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground italic">New Partner (No reviews yet)</span>
                     )}
                   </div>
 

@@ -1,6 +1,7 @@
 import { HeroSection } from "@/components/home/hero-section";
 import { CategoriesSection } from "@/components/home/categories-section";
 import { FeaturedSection } from "@/components/home/featured-section";
+import { TopRatedVendorsSection } from "@/components/home/top-rated-vendors-section";
 import { WhyChooseSection } from "@/components/home/why-choose-section";
 import { HowItWorksSection } from "@/components/home/how-it-works-section";
 import { apiFetch } from "@/lib/core/server";
@@ -40,6 +41,7 @@ export default async function Home() {
       <HeroSection />
       <CategoriesSection categories={categories} />
       <FeaturedSection />
+      <TopRatedVendorsSection />
       <WhyChooseSection />
       <HowItWorksSection />
     </>

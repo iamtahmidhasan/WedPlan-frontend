@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { Sparkles, ShieldCheck, Store } from "lucide-react";
+import { Sparkles, ShieldCheck, Store, Star } from "lucide-react";
 import { apiFetch } from "@/lib/core/server";
 import {
   VendorsDirectory,
   type VendorUser,
   type ServiceSummary,
+  type ReviewSummary,
 } from "@/components/vendors/vendors-directory";
 
 export const metadata: Metadata = {
@@ -14,26 +15,18 @@ export const metadata: Metadata = {
 };
 
 export default async function VendorsPage() {
-  let vendors: VendorUser[] = [];
-  let services: ServiceSummary[] = [];
+  const [vendorsRes, servicesRes, reviewsRes] = await Promise.all([
+    apiFetch("/vendors", { cache: "no-store" }),
+    apiFetch("/services", { cache: "no-store" }),
+    apiFetch("/reviews", { cache: "no-store" }),
+  ]);
 
-  try {
-    const [vendorsRes, servicesRes] = await Promise.all([
-      apiFetch("/vendors", { cache: "no-store" }).catch(() => null),
-      apiFetch("/services", { cache: "no-store" }).catch(() => null),
-    ]);
-
-    if (vendorsRes?.ok) {
-      vendors = await vendorsRes.json();
-    }
-    if (servicesRes?.ok) {
-      services = await servicesRes.json();
-    }
-  } catch (err) {
-    console.error("Error fetching vendors directory data:", err);
-  }
+  const vendors: VendorUser[] = vendorsRes.ok ? await vendorsRes.json() : [];
+  const services: ServiceSummary[] = servicesRes.ok ? await servicesRes.json() : [];
+  const reviews: ReviewSummary[] = reviewsRes.ok ? await reviewsRes.json() : [];
 
   const premiumVendorsCount = vendors.filter((v) => v.isPremium).length;
+  const totalReviewsCount = reviews.length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -93,6 +86,11 @@ export default async function VendorsPage() {
             </span>
             <span className="h-3 w-px bg-border" />
             <span className="flex items-center gap-1.5">
+              <Star className="size-3.5 fill-amber-500 text-amber-500" />
+              <span className="font-bold text-foreground">{totalReviewsCount}</span> Verified Reviews
+            </span>
+            <span className="h-3 w-px bg-border" />
+            <span className="flex items-center gap-1.5">
               <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>Direct Booking</span>
             </span>
@@ -102,7 +100,7 @@ export default async function VendorsPage() {
 
       {/* Directory & Profile Cards Section */}
       <div className="mx-auto max-w-7xl px-6 py-12 sm:px-10 lg:py-16">
-        <VendorsDirectory vendors={vendors} services={services} />
+        <VendorsDirectory vendors={vendors} services={services} reviews={reviews} />
       </div>
     </div>
   );

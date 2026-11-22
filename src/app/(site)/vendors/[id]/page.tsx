@@ -11,6 +11,8 @@ import {
   Layers,
   Sparkles,
   HeartHandshake,
+  Star,
+  MessageSquareQuote,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ServiceCard, type Service } from "@/components/services/service-card";
@@ -36,6 +38,16 @@ export interface VendorUser {
   createdAt?: string;
 }
 
+export interface ReviewSummary {
+  _id: string;
+  serviceId: string;
+  rating: number;
+  review: string;
+  user?: string;
+  userName?: string;
+  date?: string;
+}
+
 function getInitials(name?: string, email?: string): string {
   const source = name || email || "V";
   return source
@@ -48,18 +60,14 @@ function getInitials(name?: string, email?: string): string {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  try {
-    const res = await apiFetch(`/vendors/${id}`, { cache: "no-store" });
-    if (res.ok) {
-      const vendor: VendorUser = await res.json();
-      const displayName = vendor.businessName || vendor.name || "Wedding Vendor";
-      return {
-        title: `${displayName} | WedPlan Vendor Profile`,
-        description: `Explore wedding services and request bookings with ${displayName} on WedPlan.`,
-      };
-    }
-  } catch {
-    // fallback
+  const res = await apiFetch(`/vendors/${id}`, { cache: "no-store" });
+  if (res.ok) {
+    const vendor: VendorUser = await res.json();
+    const displayName = vendor.businessName || vendor.name || "Wedding Vendor";
+    return {
+      title: `${displayName} | WedPlan Vendor Profile`,
+      description: `Explore wedding services and request bookings with ${displayName} on WedPlan.`,
+    };
   }
 
   return {
@@ -84,34 +92,37 @@ export default async function VendorDetailsPage({ params }: PageProps) {
     redirect("/unauthorized");
   }
 
-  // 2. Fetch vendor details and published services
-  let vendor: VendorUser | null = null;
-  let services: Service[] = [];
+  // 2. Fetch vendor details, published services, and reviews
+  const [vendorRes, servicesRes, reviewsRes] = await Promise.all([
+    apiFetch(`/vendors/${id}`, { cache: "no-store" }),
+    apiFetch(`/services`, { cache: "no-store" }),
+    apiFetch(`/reviews`, { cache: "no-store" }),
+  ]);
 
-  try {
-    const [vendorRes, servicesRes] = await Promise.all([
-      apiFetch(`/vendors/${id}`, { cache: "no-store" }).catch(() => null),
-      apiFetch(`/services`, { cache: "no-store" }).catch(() => null),
-    ]);
-
-    if (!vendorRes || !vendorRes.ok) {
-      notFound();
-    }
-
-    vendor = await vendorRes.json();
-
-    if (servicesRes?.ok) {
-      const allServices: Service[] = await servicesRes.json();
-      services = allServices.filter(
-        (s) =>
-          (s.vendorId === vendor?._id || s.vendorId === vendor?.id) &&
-          (s.status === "approved" || !s.status)
-      );
-    }
-  } catch (err) {
-    console.error("Error fetching vendor profile:", err);
+  if (!vendorRes || !vendorRes.ok) {
     notFound();
   }
+
+  const vendor: VendorUser = await vendorRes.json();
+  const allServices: Service[] = servicesRes.ok ? await servicesRes.json() : [];
+  const services = allServices.filter(
+    (s) =>
+      (s.vendorId === vendor._id || s.vendorId === vendor.id) &&
+      (s.status === "approved" || !s.status)
+  );
+
+  const allReviews: ReviewSummary[] = reviewsRes.ok ? await reviewsRes.json() : [];
+  const serviceIds = new Set(services.map((s) => s._id));
+  const vendorReviews = allReviews.filter((r) => serviceIds.has(r.serviceId));
+
+  const reviewCount = vendorReviews.length;
+  const avgRating =
+    reviewCount > 0
+      ? (
+          vendorReviews.reduce((sum, r) => sum + (Number(r.rating) || 5), 0) /
+          reviewCount
+        ).toFixed(1)
+      : null;
 
   if (!vendor || !vendor._id) {
     notFound();
@@ -225,7 +236,7 @@ export default async function VendorDetailsPage({ params }: PageProps) {
             )}
 
             {/* Vendor Meta Information Grid */}
-            <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-xl border border-border/80 bg-secondary/20 p-4 text-xs">
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 rounded-xl border border-border/80 bg-secondary/20 p-4 text-xs">
               <div className="flex items-center gap-2.5 text-muted-foreground">
                 <Mail className="size-4 text-primary shrink-0" />
                 <div className="min-w-0">
@@ -246,6 +257,22 @@ export default async function VendorDetailsPage({ params }: PageProps) {
                   </span>
                   <span className="font-medium text-foreground">
                     {services.length} {services.length === 1 ? "Service" : "Services"} Listed
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5 text-muted-foreground">
+                <Star className="size-4 fill-amber-500 text-amber-500 shrink-0" />
+                <div>
+                  <span className="block text-[10px] uppercase font-semibold tracking-wider text-muted-foreground">
+                    Client Rating
+                  </span>
+                  <span className="font-medium text-foreground">
+                    {avgRating
+                      ? `${avgRating} / 5.0 (${reviewCount} ${
+                          reviewCount === 1 ? "review" : "reviews"
+                        })`
+                      : "New Wedding Partner"}
                   </span>
                 </div>
               </div>
@@ -306,6 +333,93 @@ export default async function VendorDetailsPage({ params }: PageProps) {
                   vendorName={displayName}
                 />
               ))}
+            </div>
+          )}
+        </div>
+
+        {/* Client Reviews Section */}
+        <div id="reviews" className="space-y-6 scroll-mt-24">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-border pb-4">
+            <div>
+              <h2 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                Client Reviews for {displayName}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Authentic testimonials from couples who booked services with this wedding professional.
+              </p>
+            </div>
+            {avgRating && (
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1">
+                <Star className="size-3.5 fill-amber-500 text-amber-500" />
+                <span className="font-mono text-xs font-bold text-amber-700 dark:text-amber-400">
+                  {avgRating} / 5.0
+                </span>
+                <span className="text-[11px] text-muted-foreground">
+                  ({reviewCount} {reviewCount === 1 ? "review" : "reviews"})
+                </span>
+              </div>
+            )}
+          </div>
+
+          {vendorReviews.length === 0 ? (
+            <div className="flex min-h-40 flex-col items-center justify-center rounded-2xl border border-dashed border-border p-8 text-center bg-card/40">
+              <MessageSquareQuote className="size-6 text-muted-foreground" />
+              <h3 className="mt-2 text-sm font-semibold text-foreground">
+                No reviews yet for this vendor
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Reviews will appear here once booked couples complete their celebration.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {vendorReviews.map((r) => {
+                const ratingNum = Math.max(1, Math.min(5, Number(r.rating) || 5));
+                const formattedDate = r.date
+                  ? new Date(r.date).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })
+                  : "Verified Review";
+
+                return (
+                  <div
+                    key={r._id}
+                    className="flex flex-col justify-between rounded-xl border border-border bg-card p-5 shadow-xs"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-0.5 text-amber-500">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`size-3.5 ${
+                                i < ratingNum
+                                  ? "fill-amber-500 text-amber-500"
+                                  : "text-muted-foreground/30"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-[11px] text-muted-foreground">
+                          {formattedDate}
+                        </span>
+                      </div>
+
+                      <p className="text-xs leading-relaxed text-foreground/90 whitespace-pre-line">
+                        &ldquo;{r.review}&rdquo;
+                      </p>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-border/60">
+                      <p className="text-xs font-semibold text-foreground truncate">
+                        {r.userName || r.user || "Verified Couple"}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
