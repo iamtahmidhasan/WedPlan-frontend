@@ -296,10 +296,11 @@ export default async function DashboardBookingsPage() {
                           />
                         )}
 
-                        {/* Vendor Accept / Reject Buttons (Only if pending) */}
-                        {isVendor && booking._id && isPending && (
+                        {/* Vendor Accept / Reject / Complete Buttons */}
+                        {isVendor && booking._id && (isPending || status === "accepted") && (
                           <VendorBookingActions
                             id={booking._id}
+                            currentStatus={status}
                             serviceName={service?.serviceName}
                             customerName={customerDisplay}
                           />

@@ -35,6 +35,7 @@ export interface BookingFormData {
 const STATUS_OPTIONS = [
   { value: "pending", label: "Pending" },
   { value: "accepted", label: "Accepted" },
+  { value: "completed", label: "Completed" },
   { value: "rejected", label: "Rejected" },
   { value: "cancelled", label: "Cancelled" },
 ] as const;
@@ -139,7 +140,7 @@ export function EditBookingForm({
     }
   }
 
-  async function handleVendorAction(action: "accepted" | "rejected") {
+  async function handleVendorAction(action: "accepted" | "rejected" | "completed") {
     setIsProcessingVendorAction(true);
     try {
       const res = await apiFetch(`/bookings?id=${booking.id}`, {
@@ -150,12 +151,17 @@ export function EditBookingForm({
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => null);
-        throw new Error(errorData?.message || `Failed to ${action} booking`);
+        throw new Error(errorData?.message || `Failed to update booking to ${action}`);
       }
 
-      toast.success(`Booking Request ${action === "accepted" ? "Accepted" : "Rejected"}`, {
-        description: `This booking request is now marked as ${action}.`,
-      });
+      toast.success(
+        `Booking Request ${
+          action === "accepted" ? "Accepted" : action === "completed" ? "Completed" : "Rejected"
+        }`,
+        {
+          description: `This booking request is now marked as ${action}.`,
+        }
+      );
       router.push("/dashboard/bookings");
       router.refresh();
     } catch (err) {
@@ -417,6 +423,27 @@ export function EditBookingForm({
             >
               Back to Bookings
             </Link>
+
+            {/* Vendor Mark as Completed button if accepted */}
+            {isVendor && normalizedInitialStatus === "accepted" && (
+              <ConfirmDialog
+                title="Mark Booking as Completed"
+                description="Are you sure you want to mark this wedding booking as completed? This confirms that the service has been successfully delivered."
+                confirmLabel="Mark as Completed"
+                onConfirm={() => handleVendorAction("completed")}
+                trigger={
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    disabled={isProcessingVendorAction}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Mark as Completed
+                  </Button>
+                }
+              />
+            )}
 
             {/* Vendor Accept / Reject buttons if pending */}
             {isVendor && isPending && (

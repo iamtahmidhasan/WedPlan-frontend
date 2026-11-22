@@ -23,6 +23,7 @@ interface UpdateBookingStatusButtonProps {
 const STATUS_OPTIONS = [
   { value: "pending", label: "Pending", color: "bg-amber-500" },
   { value: "accepted", label: "Accepted", color: "bg-emerald-500" },
+  { value: "completed", label: "Completed", color: "bg-blue-500" },
   { value: "rejected", label: "Rejected", color: "bg-rose-500" },
   { value: "cancelled", label: "Cancelled", color: "bg-muted-foreground" },
 ] as const;
@@ -78,6 +79,8 @@ export function UpdateBookingStatusButton({
           "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize",
           status === "accepted" &&
             "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
+          status === "completed" &&
+            "bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/20",
           status === "pending" &&
             "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20",
           status === "rejected" &&
@@ -87,6 +90,7 @@ export function UpdateBookingStatusButton({
         )}
       >
         {status === "accepted" && <CheckCircle2 className="size-3" />}
+        {status === "completed" && <CheckCircle2 className="size-3" />}
         {status === "pending" && <Clock className="size-3" />}
         {status === "rejected" && <XCircle className="size-3" />}
         {status === "cancelled" && <Ban className="size-3" />}
@@ -95,13 +99,18 @@ export function UpdateBookingStatusButton({
     );
   };
 
-  // If explicitly badge variant, or if Customer, or if non-pending and non-admin: static badge
-  if (variant === "badge" || isCustomer || (!isAdmin && status !== "pending")) {
+  // Vendor can change pending -> accepted/rejected OR accepted -> completed
+  const canVendorChange = isVendor && (status === "pending" || status === "accepted");
+
+  // If explicitly badge variant, or if Customer, or if cannot change status: static badge
+  if (variant === "badge" || isCustomer || (!isAdmin && !canVendorChange)) {
     return renderBadgeContent();
   }
 
   const availableOptions = isVendor
-    ? STATUS_OPTIONS.filter((opt) => opt.value === "accepted" || opt.value === "rejected")
+    ? status === "accepted"
+      ? STATUS_OPTIONS.filter((opt) => opt.value === "completed")
+      : STATUS_OPTIONS.filter((opt) => opt.value === "accepted" || opt.value === "rejected")
     : STATUS_OPTIONS;
 
   return (
@@ -113,6 +122,8 @@ export function UpdateBookingStatusButton({
           "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
           status === "accepted" &&
             "bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25 dark:text-emerald-400",
+          status === "completed" &&
+            "bg-blue-500/15 text-blue-600 hover:bg-blue-500/25 dark:text-blue-400",
           status === "pending" &&
             "bg-amber-500/15 text-amber-600 hover:bg-amber-500/25 dark:text-amber-400",
           status === "rejected" &&
@@ -126,6 +137,7 @@ export function UpdateBookingStatusButton({
         ) : (
           <>
             {status === "accepted" && <CheckCircle2 className="size-3" />}
+            {status === "completed" && <CheckCircle2 className="size-3" />}
             {status === "pending" && <Clock className="size-3" />}
             {status === "rejected" && <XCircle className="size-3" />}
             {status === "cancelled" && <Ban className="size-3" />}
