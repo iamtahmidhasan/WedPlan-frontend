@@ -332,15 +332,17 @@ export default async function ServiceDetailsPage({
                 isOwner={isOwner}
                 serviceStatus={serviceStatus}
               />
-              <BookmarkButton
-                serviceId={service._id}
-                serviceName={service.serviceName}
-                category={service.category}
-                price={service.price}
-                location={service.location}
-                image={cover}
-                isBlocked={isBlocked}
-              />
+              {(!role || role === "customer") && (
+                <BookmarkButton
+                  serviceId={service._id}
+                  serviceName={service.serviceName}
+                  category={service.category}
+                  price={service.price}
+                  location={service.location}
+                  image={cover}
+                  isBlocked={isBlocked}
+                />
+              )}
             </div>
 
             <div className="mt-12 flex items-center gap-4">

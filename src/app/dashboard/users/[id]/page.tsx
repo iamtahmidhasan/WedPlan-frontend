@@ -59,7 +59,7 @@ export default function EditUserPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, isPending } = useSession();
 
   const [activeTab, setActiveTab] = useState<TabType>("personal");
 
@@ -83,6 +83,14 @@ export default function EditUserPage({
     (session?.user?.id && session.user.id === id) ||
     (session?.user?.email && session.user.email === user.email),
   );
+
+  const userRole = (session?.user as { role?: string } | undefined)?.role;
+
+  useEffect(() => {
+    if (!isPending && userRole && userRole !== "admin") {
+      router.replace("/dashboard");
+    }
+  }, [isPending, userRole, router]);
 
   useEffect(() => {
     Promise.all([

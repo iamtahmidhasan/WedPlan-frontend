@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { ExternalLink } from "lucide-react";
 import {
@@ -35,6 +36,16 @@ export default async function DashboardBookmarksPage() {
   });
   const sessionUser = session?.user;
 
+  if (!sessionUser) {
+    redirect("/sign-in?redirect=/dashboard/bookmarks");
+  }
+
+  const role = (sessionUser as { role?: string } | undefined)?.role;
+  // Spec rule: Saved Bookmarks is exclusively for Customer accounts
+  if (role !== "customer") {
+    redirect("/dashboard");
+  }
+
   let bookmarks: BookmarkItem[] = [];
   let services: Service[] = [];
 
@@ -46,19 +57,7 @@ export default async function DashboardBookmarksPage() {
 
     if (bookmarksRes.ok) {
       const allBookmarks: BookmarkItem[] = await bookmarksRes.json();
-      // If session user exists, show bookmarks for this user or all if not set
-      if (sessionUser) {
-        const userBookmarks = allBookmarks.filter(
-          (b) => b.userId === sessionUser.id,
-        );
-        if (session?.user?.role == "admin") {
-          bookmarks = allBookmarks;
-        } else {
-          bookmarks = userBookmarks;
-        }
-      } else {
-        bookmarks = allBookmarks;
-      }
+      bookmarks = allBookmarks.filter((b) => b.userId === sessionUser.id);
     }
 
     if (servicesRes && servicesRes.ok) {

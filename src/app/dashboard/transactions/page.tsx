@@ -1,3 +1,5 @@
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -7,8 +9,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { apiFetch } from "@/lib/core/server";
+import { auth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
-import { CheckCircle2, Clock, DollarSign, ShieldCheck, Sparkles } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock,
+  DollarSign,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 
 type Transaction = {
   _id?: string;
@@ -33,6 +42,18 @@ type UserSummary = {
 };
 
 export default async function DashboardTransactionsPage() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+  const sessionUser = session?.user;
+  const role = (sessionUser as { role?: string } | undefined)?.role;
+
+  // Spec rule: Users must not be able to access another role's dashboard by manually changing the URL.
+  // Only Admin can access Admin Transactions.
+  if (!sessionUser || role !== "admin") {
+    redirect("/unauthorized");
+  }
+
   const [transactionsRes, usersRes] = await Promise.all([
     apiFetch(`/transactions`, { cache: "no-store" }).catch(() => null),
     apiFetch(`/users`, { cache: "no-store" }).catch(() => null),
@@ -64,7 +85,8 @@ export default async function DashboardTransactionsPage() {
       <div>
         <h1 className="text-2xl font-bold">Platform Transactions</h1>
         <p className="text-sm text-muted-foreground">
-          Platform subscription payments, vendor upgrades, and transaction history.
+          Platform subscription payments, vendor upgrades, and transaction
+          history.
         </p>
       </div>
 
@@ -78,8 +100,12 @@ export default async function DashboardTransactionsPage() {
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-2xl font-bold tracking-tight">{totalTransactions}</span>
-            <p className="mt-0.5 text-xs text-muted-foreground">Recorded checkout sessions</p>
+            <span className="text-2xl font-bold tracking-tight">
+              {totalTransactions}
+            </span>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Recorded checkout sessions
+            </p>
           </div>
         </div>
 
@@ -91,8 +117,12 @@ export default async function DashboardTransactionsPage() {
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-2xl font-bold tracking-tight">{completedCount}</span>
-            <p className="mt-0.5 text-xs text-muted-foreground">Active premium vendor accounts</p>
+            <span className="text-2xl font-bold tracking-tight">
+              {completedCount}
+            </span>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Active premium vendor accounts
+            </p>
           </div>
         </div>
 
@@ -104,8 +134,12 @@ export default async function DashboardTransactionsPage() {
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-2xl font-bold tracking-tight">${totalRevenue.toFixed(2)} USD</span>
-            <p className="mt-0.5 text-xs text-muted-foreground">Gross subscription volume</p>
+            <span className="text-2xl font-bold tracking-tight">
+              ${totalRevenue.toFixed(2)} USD
+            </span>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Gross subscription volume
+            </p>
           </div>
         </div>
       </div>
@@ -157,11 +191,17 @@ export default async function DashboardTransactionsPage() {
                     {/* Transaction ID */}
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="font-mono text-xs font-semibold text-foreground max-w-[180px] truncate" title={txId}>
+                        <span
+                          className="font-mono text-xs font-semibold text-foreground max-w-[180px] truncate"
+                          title={txId}
+                        >
                           {txId}
                         </span>
                         {transaction.payment_intent && (
-                          <span className="font-mono text-[11px] text-muted-foreground max-w-[180px] truncate" title={transaction.payment_intent}>
+                          <span
+                            className="font-mono text-[11px] text-muted-foreground max-w-[180px] truncate"
+                            title={transaction.payment_intent}
+                          >
                             pi: {transaction.payment_intent}
                           </span>
                         )}
@@ -196,11 +236,14 @@ export default async function DashboardTransactionsPage() {
                     {/* Payment Date */}
                     <TableCell className="text-xs text-muted-foreground">
                       {transaction.payment_date
-                        ? new Date(transaction.payment_date).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          })
+                        ? new Date(transaction.payment_date).toLocaleDateString(
+                            "en-US",
+                            {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            },
+                          )
                         : "N/A"}
                     </TableCell>
 
@@ -219,7 +262,11 @@ export default async function DashboardTransactionsPage() {
                         ) : (
                           <Clock className="size-3" />
                         )}
-                        <span>{isPaid ? "Paid" : transaction.payment_status ?? "Pending"}</span>
+                        <span>
+                          {isPaid
+                            ? "Paid"
+                            : (transaction.payment_status ?? "Pending")}
+                        </span>
                       </span>
                     </TableCell>
                   </TableRow>

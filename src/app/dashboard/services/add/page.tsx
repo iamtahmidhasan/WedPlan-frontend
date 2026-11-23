@@ -14,6 +14,13 @@ export default async function AddServicePage() {
     headers: await headers(),
   });
   const user = session?.user;
+  const role = (user as { role?: string } | undefined)?.role;
+
+  // Spec rule: Users must not be able to access another role's dashboard by manually changing the URL.
+  // Customers cannot access Add Service.
+  if (!user || role === "customer") {
+    redirect("/dashboard");
+  }
 
   const categoriesRes = await apiFetch("/categories", { cache: "no-store" }).catch(() => null);
   const categories: { _id: string; name: string }[] = categoriesRes?.ok ? await categoriesRes.json() : [];

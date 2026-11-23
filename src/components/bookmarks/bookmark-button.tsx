@@ -43,13 +43,16 @@ export function BookmarkButton({
   const [bookmarkId, setBookmarkId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const role = (session?.user as { role?: string } | undefined)?.role;
+  const isCustomer = !session?.user || role === "customer";
+
   const sessionBlocked = Boolean(
     (session?.user as { isBlocked?: boolean } | undefined)?.isBlocked
   );
   const userIsBlocked = isBlocked ? true : sessionBlocked;
 
   useEffect(() => {
-    if (!session?.user) return;
+    if (!session?.user || role !== "customer") return;
 
     apiFetch(`/bookmarks`)
       .then((res) => (res.ok ? res.json() : []))
@@ -75,12 +78,22 @@ export function BookmarkButton({
         }
       })
       .catch((err) => console.error("Error checking bookmark:", err));
-  }, [serviceId, session?.user]);
+  }, [serviceId, session?.user, role]);
+
+  // Bookmarks are strictly for customer accounts. Vendors and Admins do not have bookmarking functionality.
+  if (session?.user && role && role !== "customer") {
+    return null;
+  }
 
   async function handleToggleBookmark() {
     if (!session?.user) {
       toast.error("Please sign in to bookmark services");
       router.push("/sign-in");
+      return;
+    }
+
+    if (role && role !== "customer") {
+      toast.error("Only customer accounts can bookmark wedding services");
       return;
     }
 
