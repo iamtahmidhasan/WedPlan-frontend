@@ -47,6 +47,8 @@ interface BookingHandleProps {
   isBlocked?: boolean;
   bookingCount?: number;
   isPremium?: boolean;
+  isOwner?: boolean;
+  serviceStatus?: string;
 }
 
 export function BookingHandle({
@@ -57,6 +59,8 @@ export function BookingHandle({
   price,
   initialBooked = false,
   isBlocked = false,
+  isOwner = false,
+  serviceStatus = "approved",
 }: BookingHandleProps) {
   const router = useRouter();
   const { data: session, isPending } = useSession();
@@ -92,6 +96,15 @@ export function BookingHandle({
     );
   }
 
+  if (isOwner) {
+    return (
+      <div className="rounded-md border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-xs text-amber-700 dark:text-amber-400 flex items-center gap-2">
+        <AlertCircle className="size-4 shrink-0" />
+        <span>You are the publisher of this service listing. Vendors cannot book their own services.</span>
+      </div>
+    );
+  }
+
   if (role === "admin") {
     return (
       <div className="rounded-md border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
@@ -104,6 +117,15 @@ export function BookingHandle({
     return (
       <div className="rounded-md border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
         Vendors cannot book services. Please sign in as a customer to submit booking requests.
+      </div>
+    );
+  }
+
+  if (serviceStatus && serviceStatus !== "approved") {
+    return (
+      <div className="rounded-md border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-xs text-amber-700 dark:text-amber-400 flex items-center gap-2">
+        <AlertCircle className="size-4 shrink-0" />
+        <span>This service is currently {serviceStatus} and not active for bookings.</span>
       </div>
     );
   }
@@ -197,7 +219,8 @@ export function BookingHandle({
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to create booking: HTTP ${response.status}`);
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || `Failed to create booking: HTTP ${response.status}`);
       }
 
       toast.success("Booking request sent successfully!", {

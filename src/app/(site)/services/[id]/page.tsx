@@ -2,7 +2,17 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, MapPin, Star, MessageSquareQuote } from "lucide-react";
+import {
+  ArrowLeft,
+  MapPin,
+  Star,
+  MessageSquareQuote,
+  Store,
+  Mail,
+  Sparkles,
+  ArrowUpRight,
+  AlertCircle,
+} from "lucide-react";
 import { connection } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
@@ -21,6 +31,15 @@ export const metadata: Metadata = {
   description: "Explore the details of a WedPlan service.",
 };
 
+interface VendorSummary {
+  _id?: string;
+  id?: string;
+  name?: string;
+  email?: string;
+  image?: string;
+  businessName?: string;
+  isPremium?: boolean;
+}
 
 export default async function ServiceDetailsPage({
   params,
@@ -49,14 +68,59 @@ export default async function ServiceDetailsPage({
   if (!response.ok) notFound();
 
   const service = (await response.json()) as Service;
-  const reviews: { _id: string; rating: number; review: string; user: string; userName?: string; date: string }[] =
-    reviewsRes?.ok ? await reviewsRes.json() : [];
-  const [cover, second, third] = service.images;
+  if (!service || !service._id) notFound();
+
+  const reviews: {
+    _id: string;
+    rating: number;
+    review: string;
+    user: string;
+    userName?: string;
+    date: string;
+  }[] = reviewsRes?.ok ? await reviewsRes.json() : [];
 
   const role = (
     session?.user as { role?: string } | undefined
   )?.role?.toLowerCase();
-  const isVendor = role === "vendor";
+  const isAdmin = role === "admin";
+
+  // Fetch vendor details
+  let vendor: VendorSummary | null = null;
+  if (service.vendorId) {
+    const vendorRes = await apiFetch(`/vendors/${service.vendorId}`, {
+      cache: "no-store",
+    }).catch(() => null);
+
+    if (vendorRes?.ok) {
+      vendor = await vendorRes.json();
+    } else {
+      const usersRes = await apiFetch(`/users?id=${service.vendorId}`, {
+        cache: "no-store",
+      }).catch(() => null);
+      if (usersRes?.ok) {
+        vendor = await usersRes.json();
+      }
+    }
+  }
+
+  const isOwner = Boolean(
+    session?.user?.id &&
+      (service.vendorId === session.user.id ||
+        (vendor?._id && String(vendor._id) === session.user.id) ||
+        (vendor?.id && vendor.id === session.user.id))
+  );
+
+  const serviceStatus = service.status || "approved";
+  const isApproved = serviceStatus === "approved";
+
+  // If service is pending or rejected, only Admin and Vendor Owner can view it
+  if (!isApproved && !isAdmin && !isOwner) {
+    notFound();
+  }
+
+  const [cover, second, third, ...extraImages] = Array.isArray(service.images)
+    ? service.images
+    : [];
 
   const [bookingCount, isBlocked] = await Promise.all([
     getBookingCount(),
@@ -124,8 +188,11 @@ export default async function ServiceDetailsPage({
     }
   }
 
+  const vendorDisplayName =
+    vendor?.businessName || vendor?.name || "Verified Wedding Vendor";
+
   return (
-    <main className="bg-background">
+    <main className="bg-background min-h-screen pb-20">
       <div className="mx-auto w-full max-w-7xl px-6 pt-10 sm:px-10">
         <Link
           href="/services"
@@ -135,51 +202,136 @@ export default async function ServiceDetailsPage({
           All services
         </Link>
 
-        <div className="mt-12 grid gap-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-16">
+        {/* Informational banner if previewing an unapproved service */}
+        {!isApproved && (
+          <div className="mt-6 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-800 dark:text-amber-300">
+            <AlertCircle className="mt-0.5 size-5 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wider">
+                Listing Status: {serviceStatus.toUpperCase()}
+              </p>
+              <p className="mt-1 text-xs text-amber-700/90 dark:text-amber-300/90 leading-relaxed">
+                This service listing is currently pending administrative approval and is not publicly visible to couples. As an administrator or the service owner, you are viewing this page in preview mode.
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-10 grid gap-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-16">
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-primary">
-              {service.category}
-            </p>
-            <h1 className="mt-6 max-w-[16ch] font-heading text-6xl leading-[0.92] tracking-[-0.04em] text-foreground sm:text-7xl lg:text-8xl">
+            <div className="flex items-center gap-2">
+              <p className="text-xs uppercase tracking-[0.24em] text-primary font-semibold">
+                {service.category}
+              </p>
+              {service.status && service.status !== "approved" && (
+                <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400 capitalize">
+                  {service.status}
+                </span>
+              )}
+            </div>
+
+            <h1 className="mt-4 max-w-[16ch] font-heading text-5xl leading-[0.94] tracking-[-0.04em] text-foreground sm:text-6xl lg:text-7xl">
               {service.serviceName}
             </h1>
-            <p className="mt-8 max-w-[50ch] text-base leading-7 text-muted-foreground">
+            <p className="mt-6 max-w-[50ch] text-base leading-7 text-muted-foreground whitespace-pre-line">
               {service.description}
             </p>
 
-            <div className="mt-12 grid gap-8 border-t border-border pt-8 sm:grid-cols-2">
+            <div className="mt-10 grid gap-8 border-t border-border pt-8 sm:grid-cols-2">
               <div>
-                <p className="text-sm text-muted-foreground">Starting at</p>
-                <p className="mt-2 font-heading text-5xl text-primary">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+                  Starting at
+                </p>
+                <p className="mt-2 font-heading text-4xl text-primary font-bold">
                   {formatPrice(service.price)}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Location</p>
-                <p className="mt-3 flex items-center gap-2 text-foreground">
-                  <MapPin className="size-4 shrink-0 text-primary" aria-hidden="true" />
-                  {service.location}
+                <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+                  Service Location
                 </p>
-                <p className="mt-4 text-sm text-muted-foreground">
-                  Vendor · {service.vendorId}
+                <p className="mt-2 flex items-center gap-2 text-foreground font-medium text-sm">
+                  <MapPin className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                  <span>{service.location || "Available Nationwide"}</span>
                 </p>
               </div>
             </div>
 
+            {/* Vendor Profile & Information Section */}
+            <div className="mt-8 rounded-xl border border-border bg-card p-5 sm:p-6 shadow-xs">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-3">
+                Vendor Information
+              </p>
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-3.5">
+                  <div className="relative size-12 shrink-0 overflow-hidden rounded-full border border-border bg-secondary">
+                    {vendor?.image ? (
+                      <Image
+                        src={vendor.image}
+                        alt={vendorDisplayName}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="flex size-full items-center justify-center bg-primary/10 font-heading text-base font-semibold text-primary">
+                        {vendorDisplayName.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-heading text-base font-semibold text-foreground">
+                        {vendorDisplayName}
+                      </span>
+                      {vendor?.isPremium && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                          <Sparkles className="size-3" />
+                          <span>Premium Partner</span>
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Store className="size-3.5 text-primary" />
+                        <span>Professional Wedding Vendor</span>
+                      </span>
+                      {vendor?.email && (
+                        <span className="flex items-center gap-1">
+                          <Mail className="size-3.5 text-muted-foreground/70" />
+                          <span>{vendor.email}</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {service.vendorId && (
+                  <Link
+                    href={`/services?vendorId=${service.vendorId}`}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <span>More from this vendor</span>
+                    <ArrowUpRight className="size-3.5 text-muted-foreground" />
+                  </Link>
+                )}
+              </div>
+            </div>
+
+            {/* Booking & Bookmark Actions */}
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              {!isVendor && (
-                <BookingHandle
-                  serviceId={service._id}
-                  vendorId={service.vendorId}
-                  serviceName={service.serviceName}
-                  defaultLocation={service.location}
-                  price={service.price}
-                  initialBooked={initialBooked}
-                  isBlocked={isBlocked}
-                  bookingCount={bookingCount}
-                  isPremium={isPremium}
-                />
-              )}
+              <BookingHandle
+                serviceId={service._id}
+                vendorId={service.vendorId}
+                serviceName={service.serviceName}
+                defaultLocation={service.location}
+                price={service.price}
+                initialBooked={initialBooked}
+                isBlocked={isBlocked}
+                bookingCount={bookingCount}
+                isPremium={isPremium}
+                isOwner={isOwner}
+                serviceStatus={serviceStatus}
+              />
               <BookmarkButton
                 serviceId={service._id}
                 serviceName={service.serviceName}
@@ -199,12 +351,13 @@ export default async function ServiceDetailsPage({
             </div>
           </div>
 
+          {/* Multiple Service Images Gallery */}
           <div className="grid grid-cols-6 gap-4">
             {cover && (
-              <div className="group relative col-span-6 aspect-[5/4] overflow-hidden border border-border bg-secondary">
+              <div className="group relative col-span-6 aspect-[5/4] overflow-hidden rounded-lg border border-border bg-secondary">
                 <Image
                   src={cover}
-                  alt={`${service.serviceName} photo 1`}
+                  alt={`${service.serviceName} cover image`}
                   fill
                   priority
                   sizes="(min-width: 1024px) 45vw, 100vw"
@@ -216,7 +369,7 @@ export default async function ServiceDetailsPage({
               <div
                 className={`group relative ${
                   third ? "col-span-4" : "col-span-6"
-                } aspect-[5/4] overflow-hidden border border-border bg-secondary`}
+                } aspect-[5/4] overflow-hidden rounded-lg border border-border bg-secondary`}
               >
                 <Image
                   src={second}
@@ -228,7 +381,7 @@ export default async function ServiceDetailsPage({
               </div>
             )}
             {third && (
-              <div className="group relative col-span-2 aspect-[5/4] overflow-hidden border border-border bg-secondary">
+              <div className="group relative col-span-2 aspect-[5/4] overflow-hidden rounded-lg border border-border bg-secondary">
                 <Image
                   src={third}
                   alt={`${service.serviceName} photo 3`}
@@ -236,6 +389,26 @@ export default async function ServiceDetailsPage({
                   sizes="(min-width: 1024px) 15vw, 33vw"
                   className="object-cover transition-transform duration-700 group-hover:scale-[1.04]"
                 />
+              </div>
+            )}
+
+            {/* Additional images if uploaded */}
+            {extraImages.length > 0 && (
+              <div className="col-span-6 grid grid-cols-3 gap-3 pt-2">
+                {extraImages.map((extraImg, idx) => (
+                  <div
+                    key={idx}
+                    className="group relative aspect-[4/3] overflow-hidden rounded-lg border border-border bg-secondary"
+                  >
+                    <Image
+                      src={extraImg}
+                      alt={`${service.serviceName} photo ${idx + 4}`}
+                      fill
+                      sizes="(min-width: 1024px) 15vw, 33vw"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  </div>
+                ))}
               </div>
             )}
           </div>
